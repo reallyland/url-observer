@@ -1,0 +1,11 @@
+{
+  "extends": "@reallyland/tsconfig/browser",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+    "target": "ES2019",
+    "declarationDir": "dist"
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["dist", "node_modules"]
+}

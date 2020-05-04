@@ -1,0 +1,71 @@
+{
+  "name": "url-observer",
+  "version": "0.0.0",
+  "private": true,
+  "description": "URLObserver observes URL changes in a web browser",
+  "keywords": [
+    "url-observer",
+    "lit-element",
+    "lit-html",
+    "polymer",
+    "typescript",
+    "web-component",
+    "web-components"
+  ],
+  "homepage": "https://github.com/reallyland/url-observer",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:reallyland/url-observer.git"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "Rong Sen Ng",
+    "email": "wes.ngrongsen@gmail.com",
+    "url": "https://github.com/motss"
+  },
+  "files": [
+    "dist/*.d.ts.map",
+    "dist/*.d.ts",
+    "dist/*.js.map",
+    "dist/*.js"
+  ],
+  "main": "./dist/my-element.js",
+  "module": "./dist/my-element.js",
+  "typings": "./dist/my-element.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.prod.json",
+    "clean": "shx rm -rf dist/ .*cache *.log",
+    "lint": "npm run lint:debug -- --config tslint.prod.json",
+    "lint:debug": "tslint --project tsconfig.json --format stylish",
+    "prepublishOnly": "npm run clean && npm run lint && npm run build",
+    "test": "npm run clean && npm run lint && npm run ts",
+    "ts": "tsc",
+    "upgrade": "npm outdated --dev && npm update --dev && npm audit fix",
+    "watch": "tsc --watch"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "npm run lint && tsc --noEmit"
+    }
+  },
+  "dependencies": {
+    "tslib": "^1.11.1"
+  },
+  "devDependencies": {
+    "@reallyland/tsconfig": "^2.0.0",
+    "@reallyland/tslint-config": "^1.1.1",
+    "husky": "^4.2.3",
+    "lit-element": "^2.3.1",
+    "lit-html": "^1.2.1",
+    "shx": "^0.3.2",
+    "tslint": "^6.1.0",
+    "typescript": "^3.8.3"
+  },
+  "engines": {
+    "node": ">= 10.18.1",
+    "npm": ">= 6.13.4"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
