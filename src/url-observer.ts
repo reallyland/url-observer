@@ -41,6 +41,11 @@ interface RouteEvent extends Omit<URLChangedOption, 'url'> {
   notFound: boolean;
 }
 
+interface VerifyCurrentUrlResult {
+  newUrl: URL;
+  skipUpdate: boolean;
+}
+
 export const popStateEventKey = ':popState';
 export const pushStateEventKey = ':pushState';
 
@@ -80,12 +85,12 @@ export class URLObserver {
     return this;
   }
 
-  public async observe() {
+  public observe(): void {
     document.body.addEventListener('click', this._click);
     $w.addEventListener('hashchange', this._hashchange);
     $w.addEventListener('popstate', this._popstate);
 
-    await this._urlChanged({
+    this._urlChanged({
       url: new URL($l.href),
       skipCheck: true,
       state: {},
@@ -94,7 +99,7 @@ export class URLObserver {
     });
   }
 
-  public disconnect() {
+  public disconnect(): void {
     document.body.removeEventListener('click', this._click);
     $w.removeEventListener('hashchange', this._hashchange);
     $w.removeEventListener('popstate', this._popstate);
@@ -122,8 +127,8 @@ export class URLObserver {
     }
   }
 
-  public async updateHistory(state: any, title: string, pathname: string) {
-    await this._urlChanged({
+  public async updateHistory(state: any, title: string, pathname: string): Promise<void> {
+    await this._urlChangedWithBeforeRoute({
       state,
       title,
       skipCheck: true,
@@ -132,8 +137,8 @@ export class URLObserver {
     });
   }
 
-  private async _popstate(ev: PopStateEvent) {
-    await this._urlChanged({
+  private _popstate(ev: PopStateEvent): void {
+    this._urlChanged({
       state: { ...ev.state },
       status: 'popstate',
       title: ev.state?.title || document.title || '',
@@ -141,8 +146,8 @@ export class URLObserver {
     });
   }
 
-  private async _hashchange() {
-    await this._urlChanged({
+  private _hashchange(): void {
+    this._urlChanged({
       state: this.#state,
       status: 'hashchange',
       title: this.#title,
@@ -150,7 +155,7 @@ export class URLObserver {
     });
   }
 
-  private async _click(ev: MouseEvent) {
+  private async _click(ev: MouseEvent): Promise<void> {
     if (
       ev.defaultPrevented ||
       ev.button !== 0 ||
@@ -185,7 +190,7 @@ export class URLObserver {
 
     const hasScope = Object.keys(anchor.scope) || anchor.hasAttribute('scope');
 
-    await this._urlChanged({
+    await this._urlChangedWithBeforeRoute({
       url,
       state: {
         scope: hasScope ? anchor.scope || anchor.getAttribute('scope') || ':default' : '',
@@ -198,7 +203,11 @@ export class URLObserver {
     });
   }
 
-  private async _runScopedRouteHandler(url: URL, status: URLChangedStatus, scope: string) {
+  private async _runScopedRouteHandler(
+    url: URL,
+    status: URLChangedStatus,
+    scope: string
+  ): Promise<boolean> {
     const route = findMatchedRoute(this.#routes, url.pathname);
 
     if (route) {
@@ -215,26 +224,53 @@ export class URLObserver {
     return true;
   }
 
-  private async _urlChanged(option: URLChangedOption) {
+  private _urlChanged(option: URLChangedOption): void {
+    const { newUrl, skipUpdate } = this._verifyCurrentUrl(option.url, option.skipCheck);
+
+    if (skipUpdate) return;
+
+    this._updateUrl(option, newUrl);
+  }
+
+  private async _urlChangedWithBeforeRoute(option: URLChangedOption): Promise<void> {
     const {
       skipCheck,
       state,
       status,
-      title,
       url,
     } = option;
 
-    if ($l.origin !== url.origin) return;
+    const { newUrl, skipUpdate } = this._verifyCurrentUrl(url, skipCheck);
 
-    const newUrl = this._getUrl(url);
-    if (!skipCheck && this._isSameUrl(newUrl)) return;
+    if (skipUpdate) return;
 
     // Run before route change handler
     if ((status === 'click' || status === 'manual') && state.scope) {
       if (!(await this._runScopedRouteHandler(newUrl, status, state.scope))) return;
     }
 
-    const fullUrl = newUrl.href;
+    this._updateUrl(option, newUrl);
+  }
+
+  private _verifyCurrentUrl(
+    url: URL,
+    skipCheck: URLChangedOption['skipCheck']
+  ): VerifyCurrentUrlResult {
+    const newUrl = this._getUrl(url);
+
+    return {
+      newUrl,
+      skipUpdate: $l.origin !== url.origin || (!skipCheck && this._isSameUrl(newUrl)),
+    };
+  }
+
+  private _updateUrl(option: URLChangedOption, url: URL): void {
+    const {
+      state,
+      title,
+    } = option;
+    const fullUrl = url.href;
+
     const now = $w.performance.now();
     const shouldReplace = status !== 'click' || (this.#lastChangedAt + this.#dwellTime > now);
 
@@ -264,7 +300,7 @@ export class URLObserver {
     );
   }
 
-  private _isSameUrl(url: URL) {
+  private _isSameUrl(url: URL): boolean {
     const { pathname, search, hash } = $l;
 
     return (
@@ -274,7 +310,7 @@ export class URLObserver {
     );
   }
 
-  private _getUrl(url: URL) {
+  private _getUrl(url: URL): URL {
     const {
       hash,
       origin,
