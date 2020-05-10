@@ -1,83 +1,33 @@
+import type {
+  MatchedRoute,
+  RouteEvent,
+  RouteOption,
+  Routes,
+  URLChangedOption,
+  URLChangedStatus,
+} from './custom_typings.js';
+import { findMatchedRoute } from './helpers/find-matched-route.js';
+
 const $w = window;
 const $h = $w.history;
 const $l = $w.location;
 
-type Routes = Map<string, RouteValue>;
-export type URLChangedStatus =
-  | 'click'
-  | 'hashchange'
-  | 'init'
-  | 'manual'
-  | 'popstate';
-
 interface URLObserverOption {
   dwellTime: number;
-  debug: boolean;
-  encodeSpaceAsPlusQuery: boolean;
-}
-
-interface URLChangedOption {
-  state: any;
-  title: string;
-  status: URLChangedStatus;
-  url: URL;
-
-  skipCheck?: boolean;
-}
-
-interface RouteOption<T extends Record<string, any> = Record<string, any>> {
-  pathRegExp: RegExp;
-  scope?: string;
-  handleEvent?(matches: T, status: URLChangedStatus): Promise<boolean> | boolean;
-}
-
-interface RouteValue {
-  pathRegExp: RegExp;
-  beforeRouteHandlers: Map<string, RouteOption['handleEvent']>;
-}
-
-interface RouteEvent extends Omit<URLChangedOption, 'url'> {
-  url: string;
-  notFound: boolean;
-}
-
-interface VerifyCurrentUrlResult {
-  newUrl: URL;
-  skipUpdate: boolean;
+  callback(): void;
 }
 
 export const popStateEventKey = ':popState';
 export const pushStateEventKey = ':pushState';
 
-// @ts-ignore
-function findMatchedRoute(routes: Routes, pathname: string): undefined | RouteValue {
-  for (const [, routeValue] of routes) {
-    if (routeValue.pathRegExp.test(pathname)) return routeValue;
-  }
-}
-
 export class URLObserver {
   #dwellTime: number = 2e3;
-  // #debug: boolean = false;
-  #encodeSpaceAsPlusQuery: boolean = true;
   #state: any;
   #title: string = '';
   #lastChangedAt: number = -1;
   #routes: Routes = new Map();
 
-  public constructor(option?: Partial<URLObserverOption>) {
-    if (option) {
-      const {
-        // debug,
-        dwellTime,
-        encodeSpaceAsPlusQuery,
-      } = option;
-
-      // this.#debug = debug ?? false;
-      this.#dwellTime = dwellTime ?? 2e3;
-      this.#encodeSpaceAsPlusQuery = encodeSpaceAsPlusQuery ?? true;
-    }
-
+  public constructor(public callback?: URLObserverOption['callback']) {
     this._popstate = this._popstate.bind(this);
     this._hashchange = this._hashchange.bind(this);
     this._click = this._click.bind(this);
@@ -85,7 +35,68 @@ export class URLObserver {
     return this;
   }
 
-  public observe(): void {
+  public add<T>(option: RouteOption<T>): void {
+    const {
+      pathRegExp,
+      handleEvent,
+      scope,
+    } = option;
+    const patternStr = pathRegExp.toString();
+    const routeValue = this.#routes.get(patternStr);
+    const scopeValue = scope || ':default';
+
+    // r h R
+    // 0 0 r
+    // 0 1 rh
+    // 1 0 x
+    // 1 1 h
+    if (routeValue) {
+      if (handleEvent) {
+        routeValue.beforeRouteHandlers.set(scopeValue, handleEvent);
+      }
+    } else {
+      this.#routes.set(patternStr, {
+        pathRegExp,
+        beforeRouteHandlers: new Map(handleEvent ? [[scopeValue, handleEvent]] : []),
+      });
+    }
+  }
+
+  public disconnect(): void {
+    document.body.removeEventListener('click', this._click);
+    $w.removeEventListener('hashchange', this._hashchange);
+    $w.removeEventListener('popstate', this._popstate);
+  }
+
+  public match<T>(): MatchedRoute<T> {
+    const { pathname } = $l;
+
+    for (const [, { pathRegExp }] of this.#routes) {
+      if (pathRegExp.test(pathname)) {
+        return {
+          found: true,
+          matches: pathname.match(pathRegExp)?.groups as undefined | T ?? {} as T,
+        };
+      }
+    }
+
+    return {
+      found: false,
+      matches: {} as T,
+    };
+  }
+
+  public observe(routes: RegExp[], option?: Partial<Omit<URLObserverOption, 'callback'>>): void {
+    (Array.isArray(routes) ? routes : []).forEach(n => this.add({ pathRegExp: n }));
+
+    if (option) {
+      const {
+        dwellTime,
+      } = option;
+
+      this.#dwellTime = dwellTime ?? 2e3;
+    }
+
     document.body.addEventListener('click', this._click);
     $w.addEventListener('hashchange', this._hashchange);
     $w.addEventListener('popstate', this._popstate);
@@ -99,32 +110,20 @@ export class URLObserver {
     });
   }
 
-  public disconnect(): void {
-    document.body.removeEventListener('click', this._click);
-    $w.removeEventListener('hashchange', this._hashchange);
-    $w.removeEventListener('popstate', this._popstate);
-  }
+  public remove(route: RegExp, scope?: RouteOption['scope']): boolean {
+    const routeKey = route.toString();
 
-  public beforeRoute<T>(option: RouteOption<T>): void {
-    const {
-      pathRegExp,
-      handleEvent,
-      scope,
-    } = option;
-    const patternStr = pathRegExp.toString();
-    const routeValue = this.#routes.get(patternStr);
-    const scopeValue = scope || ':default';
+    if (typeof(scope) === 'string') {
+      for (const [pathKey, { beforeRouteHandlers }] of this.#routes) {
+        if (pathKey === routeKey && beforeRouteHandlers.size) {
+          return beforeRouteHandlers.delete(scope || ':default');
+        }
+      }
 
-    if (routeValue) {
-      routeValue.beforeRouteHandlers.set(scopeValue, handleEvent);
-    } else {
-      this.#routes.set(patternStr, {
-        pathRegExp,
-        beforeRouteHandlers: new Map([
-          [scopeValue, handleEvent],
-        ]),
-      });
+      return false;
     }
+
+    return this.#routes.delete(routeKey);
   }
 
   public async updateHistory(state: any, title: string, pathname: string): Promise<void> {
@@ -134,24 +133,6 @@ export class URLObserver {
       skipCheck: true,
       status: 'manual',
       url: new URL(pathname, $l.origin),
-    });
-  }
-
-  private _popstate(ev: PopStateEvent): void {
-    this._urlChanged({
-      state: { ...ev.state },
-      status: 'popstate',
-      title: ev.state?.title || document.title || '',
-      url: new URL($l.href),
-    });
-  }
-
-  private _hashchange(): void {
-    this._urlChanged({
-      state: this.#state,
-      status: 'hashchange',
-      title: this.#title,
-      url: new URL($l.href),
     });
   }
 
@@ -188,7 +169,7 @@ export class URLObserver {
     /** Nothing to do if nothing new in the URL */
     if (url.href === $l.href) return;
 
-    const hasScope = Object.keys(anchor.scope) || anchor.hasAttribute('scope');
+    const hasScope = Object.keys(anchor).includes('scope') || anchor.hasAttribute('scope');
 
     await this._urlChangedWithBeforeRoute({
       url,
@@ -200,6 +181,44 @@ export class URLObserver {
         anchor.getAttribute('title') ||
         anchor.textContent ||
         '',
+    });
+  }
+
+  private _hashchange(): void {
+    this._urlChanged({
+      /**
+       * In hashchange, URL changes before router can do anything about it.
+       * So skip verifying URL.
+       */
+      skipCheck: true,
+      state: this.#state,
+      status: 'hashchange',
+      title: this.#title,
+      url: new URL($l.href),
+    });
+  }
+
+  private _isSameUrl(url: URL): boolean {
+    const { pathname, search, hash } = $l;
+
+    return (
+      url.pathname === pathname &&
+      url.search === search &&
+      url.hash === hash
+    );
+  }
+
+  private _popstate(ev: PopStateEvent): void {
+    this._urlChanged({
+      /**
+       * In popstate, URL changes before router can do anything about it.
+       * So skip verifying URL.
+       */
+      skipCheck: true,
+      state: { ...ev.state },
+      status: 'popstate',
+      title: ev.state?.title || document.title || '',
+      url: new URL($l.href),
     });
   }
 
@@ -215,7 +234,7 @@ export class URLObserver {
         pathRegExp,
         beforeRouteHandlers,
       } = route;
-      const matches = pathRegExp[Symbol.match](url.pathname)?.groups ?? {};
+      const matches = url.pathname.match(pathRegExp)?.groups ?? {};
       const beforeRouteHandler = beforeRouteHandlers.get(scope);
 
       if (beforeRouteHandler) return beforeRouteHandler(matches, status);
@@ -224,50 +243,16 @@ export class URLObserver {
     return true;
   }
 
-  private _urlChanged(option: URLChangedOption): void {
-    const { newUrl, skipUpdate } = this._verifyCurrentUrl(option.url, option.skipCheck);
-
-    if (skipUpdate) return;
-
-    this._updateUrl(option, newUrl);
+  private _shouldSkipUpdate(url: URL, skipCheck: URLChangedOption['skipCheck']): boolean {
+    return $l.origin !== url.origin || (!skipCheck && this._isSameUrl(url));
   }
 
-  private async _urlChangedWithBeforeRoute(option: URLChangedOption): Promise<void> {
+  private _updateUrl(option: URLChangedOption): void {
     const {
-      skipCheck,
       state,
       status,
-      url,
-    } = option;
-
-    const { newUrl, skipUpdate } = this._verifyCurrentUrl(url, skipCheck);
-
-    if (skipUpdate) return;
-
-    // Run before route change handler
-    if ((status === 'click' || status === 'manual') && state.scope) {
-      if (!(await this._runScopedRouteHandler(newUrl, status, state.scope))) return;
-    }
-
-    this._updateUrl(option, newUrl);
-  }
-
-  private _verifyCurrentUrl(
-    url: URL,
-    skipCheck: URLChangedOption['skipCheck']
-  ): VerifyCurrentUrlResult {
-    const newUrl = this._getUrl(url);
-
-    return {
-      newUrl,
-      skipUpdate: $l.origin !== url.origin || (!skipCheck && this._isSameUrl(newUrl)),
-    };
-  }
-
-  private _updateUrl(option: URLChangedOption, url: URL): void {
-    const {
-      state,
       title,
+      url,
     } = option;
     const fullUrl = url.href;
 
@@ -300,42 +285,32 @@ export class URLObserver {
     );
   }
 
-  private _isSameUrl(url: URL): boolean {
-    const { pathname, search, hash } = $l;
+  private _urlChanged(option: URLChangedOption): void {
+    if (this._shouldSkipUpdate(option.url, option.skipCheck)) return;
 
-    return (
-      url.pathname === pathname &&
-      url.search === search &&
-      url.hash === hash
-    );
+    this._updateUrl(option);
   }
 
-  private _getUrl(url: URL): URL {
+  private async _urlChangedWithBeforeRoute(option: URLChangedOption): Promise<void> {
     const {
-      hash,
-      origin,
-      pathname,
-      search,
-    } = url;
+      skipCheck,
+      state,
+      status,
+      url,
+    } = option;
 
-    const partiallyEncodedPathname = $w.encodeURI(pathname).replace(/\#/g, '%23').replace(/\?/g, '%3F');
+    if (this._shouldSkipUpdate(url, skipCheck)) return;
 
-    let partiallyEncodedQuery = search ?
-      `?${search.replace(/\#/g, '%23').replace(/\+/g, '%2B')}` :
-      '';
-
-    if (this.#encodeSpaceAsPlusQuery) {
-      partiallyEncodedQuery = partiallyEncodedQuery.replace(/(\s|%20)/g, '+');
-    } else {
-      /** Required for Edge */
-      partiallyEncodedQuery = partiallyEncodedQuery.replace(/ /g, '%20');
+    // Run before route change handler
+    if ((status === 'click' || status === 'manual') && state.scope) {
+      if (!(await this._runScopedRouteHandler(url, status, state.scope))) return;
     }
 
-    const partiallyEncodedHash = hash ? `#${$w.encodeURI(hash)}` : '';
+    this._updateUrl(option);
+  }
 
-    return new URL(
-      `${origin}${partiallyEncodedPathname}${partiallyEncodedQuery}${partiallyEncodedHash}`
-    );
+  public findRoute() {
+    return findMatchedRoute(this.#routes, $w.location.pathname);
   }
 }
 
