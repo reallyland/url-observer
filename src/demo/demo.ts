@@ -7,7 +7,7 @@ export const routes = {
 };
 
 $w.addEventListener('load', () => {
-  router.observe(Object.values(routes));
+  router.observe([routes.pages]);
 
   console.info('URLObserver is running...');
 

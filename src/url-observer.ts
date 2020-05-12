@@ -7,30 +7,33 @@ import type {
   URLChangedStatus,
 } from './custom_typings.js';
 import { findMatchedRoute } from './helpers/find-matched-route.js';
+import { URLObserverEntryList } from './url-observer-entry-list.js';
 
 const $w = window;
 const $h = $w.history;
 const $l = $w.location;
 
-interface URLObserverOption {
+interface URLObserverProperties {
   dwellTime: number;
-  callback(): void;
+  callback(list: URLObserverEntryList, object: URLObserver): void;
 }
 
 export const popStateEventKey = ':popState';
 export const pushStateEventKey = ':pushState';
 
 export class URLObserver {
+  #callback?: URLObserverProperties['callback'];
   #dwellTime: number = 2e3;
-  #state: any;
-  #title: string = '';
+  #entryList: URLObserverEntryList = new URLObserverEntryList();
   #lastChangedAt: number = -1;
   #routes: Routes = new Map();
 
-  public constructor(public callback?: URLObserverOption['callback']) {
+  public constructor(callback?: URLObserverProperties['callback']) {
     this._popstate = this._popstate.bind(this);
     this._hashchange = this._hashchange.bind(this);
     this._click = this._click.bind(this);
+
+    if (typeof(callback) === 'function') this.#callback = callback;
 
     return this;
   }
@@ -66,6 +69,7 @@ export class URLObserver {
     document.body.removeEventListener('click', this._click);
     $w.removeEventListener('hashchange', this._hashchange);
     $w.removeEventListener('popstate', this._popstate);
+    this.#entryList.deleteEntries();
   }
 
   public match<T>(): MatchedRoute<T> {
@@ -86,7 +90,10 @@ export class URLObserver {
     };
   }
 
-  public observe(routes: RegExp[], option?: Partial<Omit<URLObserverOption, 'callback'>>): void {
+  public observe(
+    routes: RegExp[],
+    option?: Partial<Omit<URLObserverProperties, 'callback'>>
+  ): void {
     (Array.isArray(routes) ? routes : []).forEach(n => this.add({ pathRegExp: n }));
 
     if (option) {
@@ -104,9 +111,8 @@ export class URLObserver {
     this._urlChanged({
       url: new URL($l.href),
       skipCheck: true,
-      state: {},
+      scope: '',
       status: 'init',
-      title: '',
     });
   }
 
@@ -126,10 +132,13 @@ export class URLObserver {
     return this.#routes.delete(routeKey);
   }
 
-  public async updateHistory(state: any, title: string, pathname: string): Promise<void> {
+  public takeRecords() {
+    return this.#entryList.getEntries();
+  }
+
+  public async updateHistory(pathname: string, scope?: string): Promise<void> {
     await this._urlChangedWithBeforeRoute({
-      state,
-      title,
+      scope: scope || '',
       skipCheck: true,
       status: 'manual',
       url: new URL(pathname, $l.origin),
@@ -173,27 +182,20 @@ export class URLObserver {
 
     await this._urlChangedWithBeforeRoute({
       url,
-      state: {
-        scope: hasScope ? anchor.scope || anchor.getAttribute('scope') || ':default' : '',
-      },
+      scope: hasScope ? anchor.scope || anchor.getAttribute('scope') || ':default' : '',
       status: 'click',
-      title: anchor.getAttribute('aria-label') ||
-        anchor.getAttribute('title') ||
-        anchor.textContent ||
-        '',
     });
   }
 
   private _hashchange(): void {
     this._urlChanged({
+      scope: '',
       /**
        * In hashchange, URL changes before router can do anything about it.
        * So skip verifying URL.
        */
       skipCheck: true,
-      state: this.#state,
       status: 'hashchange',
-      title: this.#title,
       url: new URL($l.href),
     });
   }
@@ -208,16 +210,15 @@ export class URLObserver {
     );
   }
 
-  private _popstate(ev: PopStateEvent): void {
+  private _popstate(): void {
     this._urlChanged({
+      scope: '',
       /**
        * In popstate, URL changes before router can do anything about it.
        * So skip verifying URL.
        */
       skipCheck: true,
-      state: { ...ev.state },
       status: 'popstate',
-      title: ev.state?.title || document.title || '',
       url: new URL($l.href),
     });
   }
@@ -249,9 +250,8 @@ export class URLObserver {
 
   private _updateUrl(option: URLChangedOption): void {
     const {
-      state,
+      scope,
       status,
-      title,
       url,
     } = option;
     const fullUrl = url.href;
@@ -260,29 +260,35 @@ export class URLObserver {
     const shouldReplace = status !== 'click' || (this.#lastChangedAt + this.#dwellTime > now);
 
     if (shouldReplace) {
-      $h.replaceState(state, title, fullUrl);
+      $h.replaceState({}, '', fullUrl);
     } else {
-      $h.pushState(state, title, fullUrl);
+      $h.pushState({}, '', fullUrl);
     }
 
     this.#lastChangedAt = now;
-    this.#state = state;
-    this.#title = title;
+    this.#entryList.addEntry({
+      scope,
+      entryType: status,
+      startTime: performance.now(),
+      url: fullUrl,
+    });
 
     $w.dispatchEvent(
       new CustomEvent(
         status === 'popstate' ? popStateEventKey : pushStateEventKey,
         {
           detail: {
-            state,
+            scope,
             status,
-            title,
             notFound: !findMatchedRoute(this.#routes, url.pathname),
             url: fullUrl,
           } as RouteEvent,
         }
       )
     );
+
+    /** Run observer callback if any */
+    if (this.#callback) this.#callback(this.#entryList, this);
   }
 
   private _urlChanged(option: URLChangedOption): void {
@@ -293,8 +299,8 @@ export class URLObserver {
 
   private async _urlChangedWithBeforeRoute(option: URLChangedOption): Promise<void> {
     const {
+      scope,
       skipCheck,
-      state,
       status,
       url,
     } = option;
@@ -302,8 +308,8 @@ export class URLObserver {
     if (this._shouldSkipUpdate(url, skipCheck)) return;
 
     // Run before route change handler
-    if ((status === 'click' || status === 'manual') && state.scope) {
-      if (!(await this._runScopedRouteHandler(url, status, state.scope))) return;
+    if ((status === 'click' || status === 'manual') && scope) {
+      if (!(await this._runScopedRouteHandler(url, status, scope))) return;
     }
 
     this._updateUrl(option);
@@ -318,7 +324,6 @@ declare global {
   // #region HTML element type extensions
   interface HTMLAnchorElement {
     scope: string;
-    state: any;
   }
   // #endregion HTML element type extensions
 

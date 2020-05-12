@@ -32,7 +32,7 @@ export class DemoNotFound extends LitElement {
   }
 
   private _goHome() {
-    router.updateHistory({}, '', '/');
+    router.updateHistory('/');
   }
 }
 

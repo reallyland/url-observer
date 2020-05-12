@@ -34,12 +34,14 @@
   "typings": "./dist/my-element.d.ts",
   "scripts": {
     "build": "tsc -p tsconfig.prod.json",
+    "build:config": "tsc -p tsconfig.wdio.json",
     "clean": "shx rm -rf dist/ .*cache *.log",
     "lint": "npm run lint:debug -- --config tslint.prod.json",
     "lint:debug": "tslint --project tsconfig.json --format stylish",
     "prepublishOnly": "npm run clean && npm run lint && npm run build",
     "serve": "es-dev-server --app-index=index.html --node-resolve --port=3000 --watch",
     "test": "npm run clean && npm run lint && npm run ts",
+    "test:dev": "npm run build:config && node run-server.js --config-file dist/tests/wdio.config.js",
     "ts": "tsc",
     "upgrade": "npm outdated --dev && npm update --dev && npm audit fix",
     "watch": "tsc --watch"
@@ -53,17 +55,28 @@
     "tslib": "^1.11.2"
   },
   "devDependencies": {
+    "@babel/preset-env": "^7.9.6",
+    "@babel/register": "^7.9.0",
     "@material/mwc-button": "^0.15.0",
     "@material/mwc-dialog": "^0.15.0",
     "@reallyland/tsconfig": "^2.0.0",
     "@reallyland/tslint-config": "^1.1.1",
+    "@types/mocha": "^7.0.2",
+    "@wdio/cli": "^6.1.9",
+    "@wdio/local-runner": "^6.1.11",
+    "@wdio/mocha-framework": "^6.1.8",
+    "@wdio/sauce-service": "^6.1.9",
+    "@wdio/selenium-standalone-service": "^6.0.16",
+    "@wdio/spec-reporter": "^6.1.9",
     "es-dev-server": "^1.48.1",
+    "expect-webdriverio": "^1.1.5",
     "husky": "^4.2.3",
     "lit-element": "^2.3.1",
     "lit-html": "^1.2.1",
     "shx": "^0.3.2",
     "tslint": "^6.1.0",
-    "typescript": "^3.8.3"
+    "typescript": "^3.8.3",
+    "webdriverio": "^6.1.9"
   },
   "engines": {
     "node": ">= 10.18.1",

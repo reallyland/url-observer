@@ -13,8 +13,8 @@ export interface MatchedRoute<T extends Record<string, any> = Record<string, any
 }
 
 export interface RouteEvent extends Omit<URLChangedOption, 'url'> {
-  url: string;
   notFound: boolean;
+  url: string;
 }
 
 export interface RouteOption<T extends Record<string, any> = Record<string, any>> {
@@ -29,10 +29,16 @@ export interface RouteValue {
 }
 
 export interface URLChangedOption {
-  state: any;
-  title: string;
+  scope: string;
   status: URLChangedStatus;
   url: URL;
 
   skipCheck?: boolean;
+}
+
+export interface URLObserverEntryProperties {
+  readonly entryType: URLChangedStatus;
+  readonly scope: string;
+  readonly startTime: number;
+  readonly url: string;
 }
