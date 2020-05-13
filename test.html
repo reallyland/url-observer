@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>URLObserver test</title>
+</head>
+<body>
+  <script type="module">
+    import { URLObserver } from '/dist/url-observer.js';
+    import { pathToRegexp } from '/node_modules/path-to-regexp/dist.es2015/index.js';
+
+    window.URLObserver = URLObserver;
+    window.pathToRegExp = pathToRegexp;
+    window.observerList = [];
+  </script>
+
+  <h1>URLObserver test</h1>
+</body>
+</html>

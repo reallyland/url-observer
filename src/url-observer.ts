@@ -7,28 +7,34 @@ import type {
   URLChangedStatus,
 } from './custom_typings.js';
 import { findMatchedRoute } from './helpers/find-matched-route.js';
+import { urlParamMatcher } from './helpers/url-param-matcher.js';
 import { URLObserverEntryList } from './url-observer-entry-list.js';
 
 const $w = window;
 const $h = $w.history;
 const $l = $w.location;
 
-interface URLObserverProperties {
-  dwellTime: number;
+interface URLObserverCallbacks {
   callback(list: URLObserverEntryList, object: URLObserver): void;
+  matcherCallback<T>(pathname: string, pathRegExp: RegExp): T;
+}
+
+interface URLObserverProperties extends Pick<URLObserverCallbacks, 'matcherCallback'> {
+  dwellTime: number;
 }
 
 export const popStateEventKey = ':popState';
 export const pushStateEventKey = ':pushState';
 
 export class URLObserver {
-  #callback?: URLObserverProperties['callback'];
+  #callback?: URLObserverCallbacks['callback'];
   #dwellTime: number = 2e3;
   #entryList: URLObserverEntryList = new URLObserverEntryList();
   #lastChangedAt: number = -1;
+  #matcherCallback: URLObserverCallbacks['matcherCallback'] = urlParamMatcher;
   #routes: Routes = new Map();
 
-  public constructor(callback?: URLObserverProperties['callback']) {
+  public constructor(callback?: URLObserverCallbacks['callback']) {
     this._popstate = this._popstate.bind(this);
     this._hashchange = this._hashchange.bind(this);
     this._click = this._click.bind(this);
@@ -79,7 +85,7 @@ export class URLObserver {
       if (pathRegExp.test(pathname)) {
         return {
           found: true,
-          matches: pathname.match(pathRegExp)?.groups as undefined | T ?? {} as T,
+          matches: this.#matcherCallback<T>(pathname, pathRegExp),
         };
       }
     }
@@ -90,18 +96,17 @@ export class URLObserver {
     };
   }
 
-  public observe(
-    routes: RegExp[],
-    option?: Partial<Omit<URLObserverProperties, 'callback'>>
-  ): void {
+  public observe(routes: RegExp[], option?: Partial<URLObserverProperties>): void {
     (Array.isArray(routes) ? routes : []).forEach(n => this.add({ pathRegExp: n }));
 
     if (option) {
       const {
         dwellTime,
+        matcherCallback,
       } = option;
 
       this.#dwellTime = dwellTime ?? 2e3;
+      this.#matcherCallback = matcherCallback ?? urlParamMatcher;
     }
 
     document.body.addEventListener('click', this._click);

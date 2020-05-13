@@ -46,11 +46,12 @@ async function main() {
   const PORT = process.env.PORT || 4000;
   const mainStartAt = performance.now();
   const config = createConfig({
-    port: PORT,
-    nodeResolve: true,
-    logStartup: false,
-    logErrorsToBrowser: true,
+    appIndex: 'test.html',
     compress: true,
+    logErrorsToBrowser: true,
+    logStartup: false,
+    nodeResolve: true,
+    port: PORT,
   });
 
   const { server } = await startServer(config);
