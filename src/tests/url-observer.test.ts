@@ -3,7 +3,8 @@ import type { URLObserver } from '../url-observer.js';
 import { HOST } from './config.js';
 
 describe('url-observer', () => {
-  before(async () => {
+  /** Always load the page to reset URL history */
+  beforeEach(async () => {
     await browser.url(HOST);
   });
 
@@ -122,7 +123,7 @@ describe('url-observer', () => {
       }
 
       $w.observerList.push(observer);
-      observer.observe(Object.keys(routes).map(n => routes[n as A]));
+      observer.observe(Object.values(routes));
 
       const results: MatchedRoute<B>[] = [];
 
@@ -171,7 +172,7 @@ describe('url-observer', () => {
       }
 
       $w.observerList.push(observer);
-      observer.observe(Object.keys(routes).map(n => routes[n as A]), {
+      observer.observe(Object.values(routes), {
         matcherCallback: function customMatcher<T>(p: string, r: RegExp): T {
           const [, ...matches] = p.match(r) ?? [];
 
@@ -204,6 +205,116 @@ describe('url-observer', () => {
     ]);
   });
 
-});
+  it(`runs matcher with default 'dwellTime'`, async () => {
+    type A = 'page' | 'section';
+    type B = string;
 
-// TODO: Write tests for 'dwellTime'
+    const newUrls = ['/test', '/test/123', '/test/456'];
+    const expected: B = await browser.executeAsync(async (
+      a: string[],
+      done
+    ) => {
+      const $w = window as any;
+      const o: typeof URLObserver = $w.URLObserver;
+      const observer = new o();
+      const routes: Record<A, RegExp> = {
+        page: /^\/test$/i,
+        section: /^\/test\/(?<test>[^\/]+)$/i,
+      };
+
+      const links: HTMLAnchorElement[] = [];
+      for (const l of a) {
+        const link = document.createElement('a');
+
+        link.href = l;
+        link.textContent = l;
+        links.push(link);
+        document.body.appendChild(link);
+      }
+
+      $w.observerList.push(observer);
+      observer.observe(Object.values(routes));
+
+      for (const l of links) {
+        /** Push 1st and 2nd URL, then replace 2nd with 3rd URL. */
+        if (l.textContent !== a[2]) await new Promise(y => setTimeout(y, 2e3));
+
+        l.click();
+      }
+
+      const popStateDone = new Promise((y) => {
+        function popStateDoneCallback() {
+          y();
+          ($w as Window).removeEventListener('popstate', popStateDoneCallback);
+        }
+
+        ($w as Window).addEventListener('popstate', popStateDoneCallback);
+      });
+
+      ($w as Window).history.back();
+      await popStateDone;
+
+      done($w.location.href);
+    }, newUrls);
+
+    const url = new URL(expected);
+
+    expect(url.pathname).toStrictEqual(newUrls[0]);
+  });
+
+  it(`runs matcher with custom 'dwellTime'`, async () => {
+    type A = 'page' | 'section';
+    type B = string;
+
+    const newUrls = ['/test', '/test/123'];
+    const expected: B = await browser.executeAsync(async (
+      a: string[],
+      done
+    ) => {
+      const $w = window as any;
+      const o: typeof URLObserver = $w.URLObserver;
+      const observer = new o();
+      const routes: Record<A, RegExp> = {
+        page: /^\/test$/i,
+        section: /^\/test\/(?<test>[^\/]+)$/i,
+      };
+
+      const links: HTMLAnchorElement[] = [];
+      for (const l of a) {
+        const link = document.createElement('a');
+
+        link.href = l;
+        link.textContent = l;
+        links.push(link);
+        document.body.appendChild(link);
+      }
+
+      $w.observerList.push(observer);
+      /** Always push when 'dwellTime' < 0 */
+      observer.observe(Object.values(routes), { dwellTime: -1 });
+
+      for (const l of links) {
+        l.click();
+      }
+
+      const popStateDone = new Promise((y) => {
+        function popStateDoneCallback() {
+          y();
+          ($w as Window).removeEventListener('popstate', popStateDoneCallback);
+        }
+
+        ($w as Window).addEventListener('popstate', popStateDoneCallback);
+      });
+
+      ($w as Window).history.back();
+      await popStateDone;
+
+      done($w.location.href);
+    }, newUrls);
+
+    const url = new URL(expected);
+
+    expect(url.pathname).toStrictEqual(newUrls[0]);
+  });
+
+});

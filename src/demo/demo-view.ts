@@ -126,7 +126,7 @@ export class DemoView extends LitElement {
   <mwc-dialog .open="${this._navigationPromptOpen}" @closed="${this._onNavigationPromptClosed}">
     <div>Navigate away?</div>
     <mwc-button slot="secondaryAction" dialogAction="dismiss">Cancel</mwc-button>
-    <mwc-button slot="primaryAction" dialogAction="confirm">OK</mwc-button>
+    <mwc-button slot="primaryAction" dialogAction="confirm" dialogInitialFocus>OK</mwc-button>
   </mwc-dialog>
   `
   ) : null}

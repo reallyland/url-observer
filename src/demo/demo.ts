@@ -2,12 +2,14 @@
 
 import { router } from './router.js';
 
+type Route = 'pages' | 'result';
+
 const $w = window;
-export const routes = {
+export const routes: Record<Route, RegExp> = {
   pages: /^\/(?<page>(about|home|result)?)$/i,
   result: /^\/(?<page>result)\/(?<result>[^\/]*)$/i,
 };
-// const routes2 = {
+// export const routes = {
 //   pages: pathToRegexp('/(about|home|result)'),
 //   result: pathToRegexp('/result/:result'),
 // };
@@ -16,19 +18,19 @@ export const routes = {
 //   const [, ...matches] = pathname.match(pathRegExp) ?? [];
 
 //   switch (pathRegExp) {
-//     case routes2.result: {
-//       return { result: matches[0] } as unknown as T;
+//     case routes.result: {
+//       return { result: decodeURIComponent(matches[0]) } as unknown as T;
 //     }
-//     case routes2.pages:
+//     case routes.pages:
 //     default: {
-//       return { page: matches[0] } as unknown as T;
+//       return { page: decodeURIComponent(matches[0]) } as unknown as T;
 //     }
 //   }
 // }
 
 $w.addEventListener('load', () => {
   // router.observe([routes.pages], { matcherCallback: customMatcher });
-  router.observe([routes.pages]);
+  router.observe(Object.values(routes), { dwellTime: -1 });
 
   console.info('URLObserver is running...');
 

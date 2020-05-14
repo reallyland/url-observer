@@ -46,8 +46,8 @@ export class URLObserver {
 
   public add<T>(option: RouteOption<T>): void {
     const {
-      pathRegExp,
       handleEvent,
+      pathRegExp,
       scope,
     } = option;
     const patternStr = pathRegExp.toString();
@@ -262,6 +262,11 @@ export class URLObserver {
     const fullUrl = url.href;
 
     const now = $w.performance.now();
+    /**
+     * URL will always be replaced when:
+     * 1. Not triggered by clicks
+     * 2. Less than defined 'dwellTime'
+     */
     const shouldReplace = status !== 'click' || (this.#lastChangedAt + this.#dwellTime > now);
 
     if (shouldReplace) {
@@ -320,9 +325,6 @@ export class URLObserver {
     this._updateUrl(option);
   }
 
-  public findRoute() {
-    return findMatchedRoute(this.#routes, $w.location.pathname);
-  }
 }
 
 declare global {
