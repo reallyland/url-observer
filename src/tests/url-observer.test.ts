@@ -1,4 +1,4 @@
-import type { MatchedRoute, URLObserverEntryProperties } from '../custom_typings.js';
+import type { MatchedRoute, Routes, RouteValue, URLObserverEntryProperties } from '../custom_typings.js';
 import type { URLObserver } from '../url-observer.js';
 import { HOST } from './config.js';
 
@@ -20,9 +20,8 @@ describe('url-observer', () => {
   it(`instantiates without 'callback'`, async () => {
     type A = boolean;
     const expected: A = await browser.executeAsync(async (done) => {
-      const $w = window as any;
-      const o: typeof URLObserver = $w.URLObserver;
-      const observer = new o();
+      const $w = window as unknown as Window;
+      const observer = new $w.URLObserver();
 
       $w.observerList.push(observer);
 
@@ -35,9 +34,8 @@ describe('url-observer', () => {
   it(`instantiates with 'callback'`, async () => {
     type A = boolean;
     const expected: A = await browser.executeAsync(async (done) => {
-      const $w = window as any;
-      const o: typeof URLObserver = $w.URLObserver;
-      const observer = new o((list, obs) => {
+      const $w = window as unknown as Window;
+      const observer = new $w.URLObserver((list, obs) => {
         /** Do nothing */
         return [list, obs];
       });
@@ -54,9 +52,8 @@ describe('url-observer', () => {
     type A = [URLObserverEntryProperties[], boolean];
     const newUrl = '/test';
     const expected: A = await browser.executeAsync(async (a: string, done) => {
-      const $w = window as any;
-      const o: typeof URLObserver = $w.URLObserver;
-      const observer = new o((list, obs) => {
+      const $w = window as unknown as Window;
+      const observer = new $w.URLObserver((list, obs) => {
         if (!linkClicked) return;
 
         const entries = list.getEntries();
@@ -104,9 +101,8 @@ describe('url-observer', () => {
       a: string[],
       done
     ) => {
-      const $w = window as any;
-      const o: typeof URLObserver = $w.URLObserver;
-      const observer = new o();
+      const $w = window as unknown as Window;
+      const observer = new $w.URLObserver();
       const routes: Record<A, RegExp> = {
         page: /^\/test$/i,
         section: /^\/test\/(?<test>[^\/]+)$/i,
@@ -153,9 +149,8 @@ describe('url-observer', () => {
       a: string[],
       done
     ) => {
-      const $w = window as any;
-      const o: typeof URLObserver = $w.URLObserver;
-      const observer = new o();
+      const $w = window as unknown as Window;
+      const observer = new $w.URLObserver();
       const routes: Record<A, RegExp> = {
         page: $w.pathToRegExp('/test'),
         section: $w.pathToRegExp('/test/:test'),
@@ -205,6 +200,61 @@ describe('url-observer', () => {
     ]);
   });
 
+  it(`does not expose 'routes' as public property when 'debug=false'`, async () => {
+    type A = boolean;
+
+    const expected: A = await browser.executeAsync(async (done) => {
+      const $w = window as unknown as Window;
+      const obs = new $w.URLObserver();
+
+      obs.observe([]);
+
+      $w.observerList.push(obs);
+
+      /** This shows that 'routes' property is enumerable */
+      done(Object.keys(obs).includes('routes'));
+    });
+
+    expect(expected).toBeFalsy();
+  });
+
+  it(`exposes 'routes' as public property when 'debug=true'`, async () => {
+    type A = boolean;
+    type B = URLObserver & { routes: Routes; };
+    type C = [string, {
+      [K in keyof RouteValue]: K extends 'beforeRouteHandlers' ? unknown[] : string;
+    }];
+
+    const expected: A = await browser.executeAsync(async (done) => {
+      const $w = window as unknown as Window;
+      const obs = new $w.URLObserver();
+
+      obs.observe([/^\/test/i], { debug: true });
+
+      const result: C[] = [];
+
+      for (const [k, v] of (obs as B).routes) {
+        const { beforeRouteHandlers, pathRegExp } = v;
+
+        result.push([k, {
+          beforeRouteHandlers: Array.from(beforeRouteHandlers),
+          pathRegExp: pathRegExp.toString(),
+        }]);
+      }
+
+      done(result);
+    });
+
+    expect(expected).toEqual([
+      [
+        '/^\\/test/i', {
+          beforeRouteHandlers: [],
+          pathRegExp: '/^\\/test/i',
+        },
+      ],
+    ]);
+  });
+
   it(`runs matcher with default 'dwellTime'`, async () => {
     type A = 'page' | 'section';
     type B = string;
@@ -214,9 +264,8 @@ describe('url-observer', () => {
       a: string[],
       done
     ) => {
-      const $w = window as any;
-      const o: typeof URLObserver = $w.URLObserver;
-      const observer = new o();
+      const $w = window as unknown as Window;
+      const observer = new $w.URLObserver();
       const routes: Record<A, RegExp> = {
         page: /^\/test$/i,
         section: /^\/test\/(?<test>[^\/]+)$/i,
@@ -245,13 +294,13 @@ describe('url-observer', () => {
       const popStateDone = new Promise((y) => {
         function popStateDoneCallback() {
           y();
-          ($w as Window).removeEventListener('popstate', popStateDoneCallback);
+          $w.removeEventListener('popstate', popStateDoneCallback);
         }
 
-        ($w as Window).addEventListener('popstate', popStateDoneCallback);
+        $w.addEventListener('popstate', popStateDoneCallback);
       });
 
-      ($w as Window).history.back();
+      $w.history.back();
       await popStateDone;
 
       done($w.location.href);
@@ -271,7 +320,7 @@ describe('url-observer', () => {
       a: string[],
       done
     ) => {
-      const $w = window as any;
+      const $w = window as unknown as Window;
       const o: typeof URLObserver = $w.URLObserver;
       const observer = new o();
       const routes: Record<A, RegExp> = {

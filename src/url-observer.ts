@@ -20,6 +20,7 @@ interface URLObserverCallbacks {
 }
 
 interface URLObserverProperties extends Pick<URLObserverCallbacks, 'matcherCallback'> {
+  debug?: boolean;
   dwellTime: number;
 }
 
@@ -28,6 +29,7 @@ export const pushStateEventKey = ':pushState';
 
 export class URLObserver {
   #callback?: URLObserverCallbacks['callback'];
+  #debug: boolean = false;
   #dwellTime: number = 2e3;
   #entryList: URLObserverEntryList = new URLObserverEntryList();
   #lastChangedAt: number = -1;
@@ -101,12 +103,23 @@ export class URLObserver {
 
     if (option) {
       const {
+        debug,
         dwellTime,
         matcherCallback,
       } = option;
 
+      this.#debug = debug ?? false;
       this.#dwellTime = dwellTime ?? 2e3;
       this.#matcherCallback = matcherCallback ?? urlParamMatcher;
+    }
+
+    if (this.#debug) {
+      Object.defineProperty(this, 'routes', {
+        value: new Map(this.#routes),
+        configurable: false,
+        enumerable: true,
+        writable: false,
+      });
     }
 
     document.body.addEventListener('click', this._click);

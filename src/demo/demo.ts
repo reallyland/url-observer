@@ -30,9 +30,10 @@ export const routes: Record<Route, RegExp> = {
 
 $w.addEventListener('load', () => {
   // router.observe([routes.pages], { matcherCallback: customMatcher });
-  router.observe(Object.values(routes), { dwellTime: -1 });
+  // router.observe(Object.values(routes), { dwellTime: -1 });
+  router.observe(Object.values(routes), { debug: true, dwellTime: -1 });
 
   console.info('URLObserver is running...');
 
-  ($w as any).router = router;
+  $w.router = router;
 });
