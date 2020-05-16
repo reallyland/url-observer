@@ -115,10 +115,12 @@ export class URLObserver {
 
     if (this.#debug) {
       Object.defineProperty(this, 'routes', {
-        value: new Map(this.#routes),
         configurable: false,
         enumerable: true,
-        writable: false,
+        /** To prevent #routes being modified via public 'routes' property */
+        get() {
+          return new Map(this.#routes);
+        },
       });
     }
 

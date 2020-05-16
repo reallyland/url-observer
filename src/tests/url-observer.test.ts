@@ -1,6 +1,7 @@
-import type { MatchedRoute, Routes, RouteValue, URLObserverEntryProperties } from '../custom_typings.js';
+import type { MatchedRoute, RouteValue, URLObserverEntryProperties } from '../custom_typings.js';
 import type { URLObserver } from '../url-observer.js';
 import { HOST } from './config.js';
+import type { URLObserverWithDebug } from './custom_test_typings.js';
 
 describe('url-observer', () => {
   /** Always load the page to reset URL history */
@@ -10,7 +11,7 @@ describe('url-observer', () => {
 
   afterEach(async () => {
     await browser.executeAsync(async (done) => {
-      const obsList: URLObserver[] = (window as any).observerList;
+      const obsList: URLObserver[] = window.observerList;
 
       for (const obs of obsList) obs.disconnect();
       done();
@@ -50,6 +51,7 @@ describe('url-observer', () => {
 
   it(`runs 'callback' on URL change`, async () => {
     type A = [URLObserverEntryProperties[], boolean];
+
     const newUrl = '/test';
     const expected: A = await browser.executeAsync(async (a: string, done) => {
       const $w = window as unknown as Window;
@@ -220,7 +222,6 @@ describe('url-observer', () => {
 
   it(`exposes 'routes' as public property when 'debug=true'`, async () => {
     type A = boolean;
-    type B = URLObserver & { routes: Routes; };
     type C = [string, {
       [K in keyof RouteValue]: K extends 'beforeRouteHandlers' ? unknown[] : string;
     }];
@@ -233,7 +234,7 @@ describe('url-observer', () => {
 
       const result: C[] = [];
 
-      for (const [k, v] of (obs as B).routes) {
+      for (const [k, v] of (obs as URLObserverWithDebug).routes) {
         const { beforeRouteHandlers, pathRegExp } = v;
 
         result.push([k, {
