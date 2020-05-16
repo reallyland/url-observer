@@ -11,7 +11,7 @@ import {
 import { cache } from 'lit-html/directives/cache.js';
 import { until } from 'lit-html/directives/until.js';
 
-import { popStateEventKey, pushStateEventKey } from '../url-observer.js';
+import { popStateEventKey, pushStateEventKey } from '../constants.js';
 import type { DialogClosedEvent, Page, RouteMatch as RouteMatch } from './custom_demo_typings.js';
 import { routes } from './demo.js';
 import { lazyImport } from './helpers/lazy-import.js';

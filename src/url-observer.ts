@@ -1,3 +1,4 @@
+import { popStateEventKey, pushStateEventKey } from './constants.js';
 import type {
   MatchedRoute,
   RouteEvent,
@@ -21,11 +22,8 @@ interface URLObserverCallbacks {
 
 interface URLObserverProperties extends Pick<URLObserverCallbacks, 'matcherCallback'> {
   debug?: boolean;
-  dwellTime: number;
+  dwellTime?: number;
 }
-
-export const popStateEventKey = ':popState';
-export const pushStateEventKey = ':pushState';
 
 export class URLObserver {
   #callback?: URLObserverCallbacks['callback'];
@@ -35,6 +33,7 @@ export class URLObserver {
   #lastChangedAt: number = -1;
   #matcherCallback: URLObserverCallbacks['matcherCallback'] = urlParamMatcher;
   #routes: Routes = new Map();
+  #connected: boolean = false;
 
   public constructor(callback?: URLObserverCallbacks['callback']) {
     this._popstate = this._popstate.bind(this);
@@ -77,6 +76,8 @@ export class URLObserver {
     document.body.removeEventListener('click', this._click);
     $w.removeEventListener('hashchange', this._hashchange);
     $w.removeEventListener('popstate', this._popstate);
+
+    this.#connected = false;
     this.#entryList.deleteEntries();
   }
 
@@ -128,6 +129,7 @@ export class URLObserver {
     $w.addEventListener('hashchange', this._hashchange);
     $w.addEventListener('popstate', this._popstate);
 
+    this.#connected = true;
     this._urlChanged({
       url: new URL($l.href),
       skipCheck: true,
@@ -291,6 +293,10 @@ export class URLObserver {
     }
 
     this.#lastChangedAt = now;
+
+    /** Do nothing when URLObserver disconnects */
+    if (!this.#connected) return;
+
     this.#entryList.addEntry({
       scope,
       entryType: status,

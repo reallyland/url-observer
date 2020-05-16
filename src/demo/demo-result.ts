@@ -8,7 +8,7 @@ import {
 } from 'lit-element';
 
 import { cache } from 'lit-html/directives/cache.js';
-import { pushStateEventKey } from '../url-observer.js';
+import { pushStateEventKey } from '../constants.js';
 import type { Page } from './custom_demo_typings.js';
 import { routes } from './demo.js';
 import { router } from './router.js';
