@@ -65,17 +65,14 @@ export class TestHelpers {
         case 'click': {
           let clickTimer = -1;
 
-          const link = document.createElement('a');
-          const linkPath = `/test-${new Date().toJSON()}`;
+          const { link, removeLink } = $w.TestHelpers.appendLink(`/test-${new Date().toJSON()}`);
           const onClick = () => {
             $w.clearTimeout(clickTimer);
             listeners.click.push('click');
             $w.removeEventListener(pushStateEventKey, onClick);
-            document.body.removeChild(link);
+            removeLink();
             y(listeners);
           };
-
-          link.href = link.textContent = linkPath;
 
           if (disconnected) {
             link.onclick = (ev: MouseEvent) => {
@@ -84,12 +81,11 @@ export class TestHelpers {
             };
           }
 
-          document.body.appendChild(link);
           $w.addEventListener(pushStateEventKey, onClick);
 
           clickTimer = $w.setTimeout(() => {
             listeners.click.push(null);
-            document.body.removeChild(link);
+            removeLink();
             $w.removeEventListener(pushStateEventKey, onClick);
             y(listeners);
           }, 2e3);
