@@ -1,3 +1,6 @@
+import type { URLObserverEntryList } from './url-observer-entry-list.js';
+import type { URLObserver } from './url-observer.js';
+
 export type Routes = Map<string, RouteValue>;
 
 export type URLChangedStatus =
@@ -36,9 +39,19 @@ export interface URLChangedOption {
   skipCheck?: boolean;
 }
 
+export interface URLObserverCallbacks {
+  callback(list: URLObserverEntryList, object: URLObserver): void;
+  matcherCallback<T>(pathname: string, pathRegExp: RegExp): T;
+}
+
 export interface URLObserverEntryProperties {
   readonly entryType: URLChangedStatus;
   readonly scope: string;
   readonly startTime: number;
   readonly url: string;
+}
+
+export interface URLObserverProperties extends Pick<URLObserverCallbacks, 'matcherCallback'> {
+  debug?: boolean;
+  dwellTime?: number;
 }

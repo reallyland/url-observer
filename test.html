@@ -9,10 +9,12 @@
   <script type="module">
     import { URLObserver } from '/dist/url-observer.js';
     import { pathToRegexp } from '/node_modules/path-to-regexp/dist.es2015/index.js';
+    import { TestHelpers } from '/dist/tests/test-helpers.js';
 
-    window.URLObserver = URLObserver;
-    window.pathToRegExp = pathToRegexp;
     window.observerList = [];
+    window.pathToRegExp = pathToRegexp;
+    window.TestHelpers = new TestHelpers();
+    window.URLObserver = URLObserver;
   </script>
 
   <h1>URLObserver test</h1>

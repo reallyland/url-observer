@@ -2,6 +2,7 @@ import type { pathToRegexp } from 'path-to-regexp';
 
 import type { Routes } from '../custom_typings.js';
 import type { URLObserver } from '../url-observer.js';
+import type { TestHelpers } from './test-helpers.js';
 
 type BrowserWindow = typeof Window;
 
@@ -13,5 +14,6 @@ declare global {
     pathToRegExp: typeof pathToRegexp;
     router: URLObserver;
     URLObserver: typeof URLObserver;
+    TestHelpers: TestHelpers;
   }
 }

@@ -25,19 +25,16 @@ describe('methods-match', () => {
 
     const expected: B = await browser.executeAsync(async (done) => {
       const $w = window as unknown as Window;
-      const observer = new $w.URLObserver();
+      const { appendLink, initObserver } = $w.TestHelpers;
 
-      $w.observerList.push(observer);
-      observer.observe([/^\/test\/(?<test>[^\/]+)/i], { debug: true });
-
-      const link = document.createElement('a');
-      const linkPath = '/test/123';
-
-      link.href = link.textContent = linkPath;
-      document.body.appendChild(link);
+      const observer = initObserver({
+        routes: [/^\/test\/(?<test>[^\/]+)/i],
+        observerOption: { debug: true },
+      });
+      const { link, removeLink } = appendLink('/test/123');
 
       link.click();
-      document.body.removeChild(link);
+      removeLink();
 
       done(observer.match<B>());
     });
@@ -56,19 +53,16 @@ describe('methods-match', () => {
 
     const expected: B = await browser.executeAsync(async (done) => {
       const $w = window as unknown as Window;
-      const observer = new $w.URLObserver();
+      const { appendLink, initObserver } = $w.TestHelpers;
 
-      $w.observerList.push(observer);
-      observer.observe([/^\/test$/i], { debug: true });
-
-      const link = document.createElement('a');
-      const linkPath = '/test/123';
-
-      link.href = link.textContent = linkPath;
-      document.body.appendChild(link);
+      const observer = initObserver({
+        routes: [/^\/test$/i],
+        observerOption: { debug: true },
+      });
+      const { link, removeLink } = appendLink('/test/123');
 
       link.click();
-      document.body.removeChild(link);
+      removeLink();
 
       done(observer.match<B>());
     });

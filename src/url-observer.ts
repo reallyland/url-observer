@@ -6,6 +6,8 @@ import type {
   Routes,
   URLChangedOption,
   URLChangedStatus,
+  URLObserverCallbacks,
+  URLObserverProperties,
 } from './custom_typings.js';
 import { findMatchedRoute } from './helpers/find-matched-route.js';
 import { urlParamMatcher } from './helpers/url-param-matcher.js';
@@ -14,16 +16,6 @@ import { URLObserverEntryList } from './url-observer-entry-list.js';
 const $w = window;
 const $h = $w.history;
 const $l = $w.location;
-
-interface URLObserverCallbacks {
-  callback(list: URLObserverEntryList, object: URLObserver): void;
-  matcherCallback<T>(pathname: string, pathRegExp: RegExp): T;
-}
-
-interface URLObserverProperties extends Pick<URLObserverCallbacks, 'matcherCallback'> {
-  debug?: boolean;
-  dwellTime?: number;
-}
 
 export class URLObserver {
   #callback?: URLObserverCallbacks['callback'];

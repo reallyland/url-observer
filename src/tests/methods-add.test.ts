@@ -22,11 +22,13 @@ describe('methods-add', () => {
 
     const expected: A[] = await browser.executeAsync(async (done) => {
       const $w = window as unknown as Window;
-      const observer = new $w.URLObserver();
+      const { initObserver } = $w.TestHelpers;
 
-      $w.observerList.push(observer);
+      const observer = initObserver({
+        routes: [],
+        observerOption: { debug: true },
+      });
 
-      observer.observe([], { debug: true });
       observer.add({ pathRegExp: /^\/test/i });
 
       const result: A[] = [];
@@ -45,12 +47,14 @@ describe('methods-add', () => {
 
     const expected: A[] = await browser.executeAsync(async (done) => {
       const $w = window as unknown as Window;
-      const observer = new $w.URLObserver();
+      const { initObserver } = $w.TestHelpers;
       const scopeName = ':default';
 
-      $w.observerList.push(observer);
+      const observer = initObserver({
+        routes: [],
+        observerOption: { debug: true },
+      });
 
-      observer.observe([], { debug: true });
       observer.add({
         handleEvent: () => true,
         pathRegExp: /^\/test/i,
@@ -72,12 +76,14 @@ describe('methods-add', () => {
 
     const expected: A[] = await browser.executeAsync(async (done) => {
       const $w = window as unknown as Window;
-      const observer = new $w.URLObserver();
+      const { initObserver } = $w.TestHelpers;
       const scopeName = ':test';
 
-      $w.observerList.push(observer);
+      const observer = initObserver({
+        routes: [],
+        observerOption: { debug: true },
+      });
 
-      observer.observe([], { debug: true });
       observer.add({
         handleEvent: () => true,
         pathRegExp: /^\/test/i,
@@ -100,11 +106,13 @@ describe('methods-add', () => {
 
     const expected: A[] = await browser.executeAsync(async (done) => {
       const $w = window as unknown as Window;
-      const observer = new $w.URLObserver();
+      const { initObserver } = $w.TestHelpers;
 
-      $w.observerList.push(observer);
+      const observer = initObserver({
+        routes: [/^\/test/i],
+        observerOption: { debug: true },
+      });
 
-      observer.observe([/^\/test/i], { debug: true });
       observer.add({ pathRegExp: /^\/test1/i });
 
       const result: A[] = [];
@@ -126,11 +134,13 @@ describe('methods-add', () => {
 
     const expected: A[] = await browser.executeAsync(async (done) => {
       const $w = window as unknown as Window;
-      const observer = new $w.URLObserver();
+      const { initObserver } = $w.TestHelpers;
 
-      $w.observerList.push(observer);
+      const observer = initObserver({
+        routes: [/^\/test/i],
+        observerOption: { debug: true },
+      });
 
-      observer.observe([/^\/test/i], { debug: true });
       observer.add({ pathRegExp: /^\/test/i });
 
       const result: A[] = [];
@@ -149,12 +159,14 @@ describe('methods-add', () => {
 
     const expected: A[] = await browser.executeAsync(async (done) => {
       const $w = window as unknown as Window;
-      const observer = new $w.URLObserver();
+      const { initObserver } = $w.TestHelpers;
       const scopeName = ':default';
 
-      $w.observerList.push(observer);
+      const observer = initObserver({
+        routes: [/^\/test/i],
+        observerOption: { debug: true },
+      });
 
-      observer.observe([/^\/test/i], { debug: true });
       observer.add({
         handleEvent: () => true,
         pathRegExp: /^\/test/i,
@@ -179,12 +191,14 @@ describe('methods-add', () => {
 
       const expected: A[] = await browser.executeAsync(async (done) => {
         const $w = window as unknown as Window;
-        const observer = new $w.URLObserver();
+        const { initObserver } = $w.TestHelpers;
         const scopeName = ':test';
 
-        $w.observerList.push(observer);
+        const observer = initObserver({
+          routes: [/^\/test/i],
+          observerOption: { debug: true },
+        });
 
-        observer.observe([/^\/test/i], { debug: true });
         observer.add({
           handleEvent: () => true,
           pathRegExp: /^\/test/i,
@@ -218,12 +232,14 @@ describe('methods-add', () => {
 
       const expected: A[] = await browser.executeAsync(async (done) => {
         const $w = window as unknown as Window;
-        const observer = new $w.URLObserver();
+        const { initObserver } = $w.TestHelpers;
         const scopeName = ':test';
 
-        $w.observerList.push(observer);
+        const observer = initObserver({
+          routes: [/^\/test/i],
+          observerOption: { debug: true },
+        });
 
-        observer.observe([/^\/test/i], { debug: true });
         observer.add({
           handleEvent: () => true,
           pathRegExp: /^\/test/i,
