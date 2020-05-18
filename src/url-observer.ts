@@ -162,7 +162,6 @@ export class URLObserver {
   private async _click(ev: MouseEvent): Promise<void> {
     if (
       ev.defaultPrevented ||
-      ev.button !== 0 ||
       ev.metaKey ||
       ev.ctrlKey ||
       ev.shiftKey
@@ -176,7 +175,7 @@ export class URLObserver {
 
     if (
       null == anchor ||
-      anchor.download ||
+      anchor.hasAttribute('download') ||
       anchor.target === '_blank' ||
       ((anchor.target === '_top' || anchor.target === '_parent') && $w.top !== $w)
     ) return;

@@ -1,12 +1,20 @@
+import { html, LitElement } from 'lit-element';
 import { popStateEventKey, pushStateEventKey } from '../constants.js';
 import type { URLObserverCallbacks, URLObserverProperties } from '../custom_typings.js';
 
 export type TriggerEventsEventName = 'click' | 'hashchange' | 'popstate';
 export type TriggerEventsResult = Record<TriggerEventsEventName, (null | TriggerEventsEventName)[]>;
 
+export interface AppendElementResult<T> {
+  element: T;
+  removeElement(): void;
+}
 export interface AppendLinkResult {
   link: HTMLAnchorElement;
   removeLink(): void;
+}
+export interface AppendShadowElementResult<T> extends AppendElementResult<T> {
+  component: HTMLElement;
 }
 export interface InitObserverOption {
   routes: RegExp[];
@@ -17,10 +25,46 @@ export interface InitObserverOption {
 const $w = window as unknown as Window;
 
 export class TestHelpers {
-  appendLink(path: string): AppendLinkResult {
+  appendElement<T extends HTMLElement>(
+    elementName: string,
+    option?: Record<string, string>
+  ): AppendElementResult<T> {
+    const element = document.createElement(elementName) as T;
+
+    if (option) {
+      for (const [k, v] of Object.entries(option)) {
+        if (k.startsWith('.')) {
+          (element as any)[k.slice(1)] = v;
+        } else {
+          element.setAttribute(k, v);
+        }
+      }
+    }
+
+    document.body.appendChild(element);
+
+    return {
+      element,
+      removeElement() {
+        document.body.removeChild(element);
+      },
+    };
+  }
+
+  appendLink(path: string, option?: Record<string, string>): AppendLinkResult {
     const link = document.createElement('a');
 
     link.href = link.textContent = path;
+
+    if (option) {
+      for (const [k, v] of Object.entries(option)) {
+        if (k.startsWith('.')) {
+          (link as any)[k.slice(1)] = v;
+        } else {
+          link.setAttribute(k, v);
+        }
+      }
+    }
 
     document.body.appendChild(link);
 
@@ -28,6 +72,88 @@ export class TestHelpers {
       link,
       removeLink() {
         document.body.removeChild(link);
+      },
+    };
+  }
+
+  appendShadowElement<T extends HTMLElement>(
+    elementName: string,
+    option?: Record<string, string>
+  ): AppendShadowElementResult<T> {
+    const element = document.createElement(elementName) as T;
+
+    if (option) {
+      for (const [k, v] of Object.entries(option)) {
+        if (k.startsWith('.')) {
+          (element as any)[k.slice(1)] = v;
+        } else {
+          element.setAttribute(k, v);
+        }
+      }
+    }
+
+    const ceName = `test-${Math.random().toString(16).slice(-7)}`;
+    // tslint:disable-next-line: max-classes-per-file
+    window.customElements.define(ceName, class extends LitElement {
+      protected render() {
+        const content = document.createElement('div');
+
+        content.appendChild(element);
+
+        return html`
+        ${content}
+        `;
+      }
+    });
+
+    const cElement = document.createElement(ceName);
+    document.body.appendChild(cElement);
+
+    return {
+      element,
+      component: cElement,
+      removeElement() {
+        document.body.removeChild(cElement);
+      },
+    };
+  }
+
+  appendShadowLink(path: string, option?: Record<string, string>): AppendLinkResult {
+    const link = document.createElement('a');
+
+    link.href = link.textContent = path;
+
+    if (option) {
+      for (const [k, v] of Object.entries(option)) {
+        if (k.startsWith('.')) {
+          (link as any)[k.slice(1)] = v;
+        } else {
+          link.setAttribute(k, v);
+        }
+      }
+    }
+
+    const ceName = `test-link-${Math.random().toString(16).slice(-7)}`;
+    // tslint:disable-next-line: max-classes-per-file
+    window.customElements.define(ceName, class extends LitElement {
+      protected render() {
+        const content = document.createElement('div');
+
+        content.appendChild(link);
+
+        return html`
+        ${content}
+        `;
+      }
+    });
+
+    const cElement = document.createElement(ceName);
+    document.body.appendChild(cElement);
+
+    return {
+      link,
+      removeLink() {
+        document.body.removeChild(cElement);
       },
     };
   }
