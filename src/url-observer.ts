@@ -122,7 +122,7 @@ export class URLObserver {
     $w.addEventListener('popstate', this._popstate);
 
     this.#connected = true;
-    this._urlChanged({
+    this._updateUrl({
       url: new URL($l.href),
       scope: '',
       status: 'init',
@@ -199,7 +199,7 @@ export class URLObserver {
   }
 
   private _hashchange(): void {
-    this._urlChanged({
+    this._updateUrl({
       scope: '',
       status: 'hashchange',
       url: new URL($l.href),
@@ -207,7 +207,7 @@ export class URLObserver {
   }
 
   private _popstate(): void {
-    this._urlChanged({
+    this._updateUrl({
       scope: '',
       status: 'popstate',
       url: new URL($l.href),
@@ -285,10 +285,6 @@ export class URLObserver {
         }
       )
     );
-  }
-
-  private _urlChanged(option: URLChangedOption): void {
-    this._updateUrl(option);
   }
 
   private async _urlChangedWithBeforeRoute(option: URLChangedOption): Promise<void> {
