@@ -124,7 +124,6 @@ export class URLObserver {
     this.#connected = true;
     this._urlChanged({
       url: new URL($l.href),
-      skipCheck: true,
       scope: '',
       status: 'init',
     });
@@ -153,7 +152,6 @@ export class URLObserver {
   public async updateHistory(pathname: string, scope?: string): Promise<void> {
     await this._urlChangedWithBeforeRoute({
       scope: scope || '',
-      skipCheck: true,
       status: 'manual',
       url: new URL(pathname, $l.origin),
     });
@@ -191,11 +189,11 @@ export class URLObserver {
     /** Nothing to do if nothing new in the URL */
     if (url.href === $l.href) return;
 
-    const hasScope = Object.keys(anchor).includes('scope') || anchor.hasAttribute('scope');
-
     await this._urlChangedWithBeforeRoute({
       url,
-      scope: hasScope ? anchor.scope || anchor.getAttribute('scope') || ':default' : '',
+      scope: Object.keys(anchor).includes('scope') || anchor.hasAttribute('scope') ?
+        anchor.scope || anchor.getAttribute('scope') || ':default' :
+        '',
       status: 'click',
     });
   }
@@ -203,34 +201,14 @@ export class URLObserver {
   private _hashchange(): void {
     this._urlChanged({
       scope: '',
-      /**
-       * In hashchange, URL changes before router can do anything about it.
-       * So skip verifying URL.
-       */
-      skipCheck: true,
       status: 'hashchange',
       url: new URL($l.href),
     });
   }
 
-  private _isSameUrl(url: URL): boolean {
-    const { pathname, search, hash } = $l;
-
-    return (
-      url.pathname === pathname &&
-      url.search === search &&
-      url.hash === hash
-    );
-  }
-
   private _popstate(): void {
     this._urlChanged({
       scope: '',
-      /**
-       * In popstate, URL changes before router can do anything about it.
-       * So skip verifying URL.
-       */
-      skipCheck: true,
       status: 'popstate',
       url: new URL($l.href),
     });
@@ -255,10 +233,6 @@ export class URLObserver {
     }
 
     return true;
-  }
-
-  private _shouldSkipUpdate(url: URL, skipCheck: URLChangedOption['skipCheck']): boolean {
-    return $l.origin !== url.origin || (!skipCheck && this._isSameUrl(url));
   }
 
   private _updateUrl(option: URLChangedOption): void {
@@ -295,6 +269,9 @@ export class URLObserver {
       url: fullUrl,
     });
 
+    /** Run observer callback if any */
+    if (this.#callback) this.#callback(this.#entryList, this);
+
     $w.dispatchEvent(
       new CustomEvent(
         status === 'popstate' ? popStateEventKey : pushStateEventKey,
@@ -308,26 +285,18 @@ export class URLObserver {
         }
       )
     );
-
-    /** Run observer callback if any */
-    if (this.#callback) this.#callback(this.#entryList, this);
   }
 
   private _urlChanged(option: URLChangedOption): void {
-    if (this._shouldSkipUpdate(option.url, option.skipCheck)) return;
-
     this._updateUrl(option);
   }
 
   private async _urlChangedWithBeforeRoute(option: URLChangedOption): Promise<void> {
     const {
       scope,
-      skipCheck,
       status,
       url,
     } = option;
-
-    if (this._shouldSkipUpdate(url, skipCheck)) return;
 
     // Run before route change handler
     if ((status === 'click' || status === 'manual') && scope) {

@@ -63,7 +63,7 @@ async function main() {
 
       if (err) console.error(`[ERROR] Failed to close server`, err);
       else {
-        debug(`Server closed`);
+        debug(`Server closed\n`);
       }
 
       process.exit(code);
@@ -76,6 +76,7 @@ async function main() {
     }, (15e3));
   };
 
+  console.debug('');
   debug(`es-dev-server running at port ${PORT}...`);
 
   [

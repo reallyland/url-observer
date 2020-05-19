@@ -661,4 +661,135 @@ describe('usages-click', () => {
 
   });
 
+  it(`does not update URL when new URL is the same as the existing one`, async () => {
+    type A = Record<'test' | 'section', RegExp>;
+    type B = URLChangedStatus[];
+
+    const newUrl = '/test/123';
+    const expected: B = await browser.executeAsync(async(
+      a: string,
+      done
+    ) => {
+      const $w = window as unknown as Window;
+      const { appendLink, initObserver } = $w.TestHelpers;
+      const routes: A = {
+        test: /^\/test$/i,
+        section: /^\/test\/(?<test>[^\/]+)$/i,
+      };
+
+      const observer = initObserver({ routes: Object.values(routes) });
+      const { link, removeLink } = appendLink(a);
+      const linkClicked = new Promise((y) => {
+        link.addEventListener('click', () => {
+          y();
+          removeLink();
+        });
+      });
+
+      await observer.updateHistory(a);
+
+      link.click();
+      await linkClicked;
+
+      done(observer.takeRecords().map(n => n.entryType));
+    }, newUrl);
+
+    expect(expected).toEqual<B>(['init', 'manual']);
+  });
+
+  it(`updates URL with default before route handler`, async () => {
+    type A = Record<'test' | 'section', RegExp>;
+    type B = Record<string, string>;
+    type C = [string, B];
+    type D = [B[], URLChangedStatus[]];
+
+    const anchorOptions: C[] = [
+      ['/test/123', { '.scope': '' }],
+      ['/test/456', { scope: '' }],
+      ['/test/789', { '.scope': 'test' }],
+      ['/test/abc', { scope: 'test' }],
+    ];
+    const expected: D = await browser.executeAsync(async(
+      a: C[],
+      done
+    ) => {
+      const $w = window as unknown as Window;
+      const { appendLink, initObserver } = $w.TestHelpers;
+      const routes: A = {
+        test: /^\/test$/i,
+        section: /^\/test\/(?<test>[^\/]+)$/i,
+      };
+
+      const observer = initObserver({ routes: Object.values(routes) });
+      const result: B[] = [];
+
+      for (const [na, nb] of a) {
+        const { link, removeLink } = appendLink(na, nb);
+        const linkClicked = new Promise((y) => {
+          link.addEventListener('click', () => {
+            y();
+            removeLink();
+          });
+        });
+
+        observer.add({
+          pathRegExp: routes.section,
+          handleEvent: () => {
+            result.push(nb);
+            return true;
+          },
+          scope: nb[Object.keys(nb)[0]],
+        });
+
+        link.click();
+        await linkClicked;
+      }
+
+      done([
+        result,
+        observer.takeRecords().map(n => n.entryType),
+      ]);
+    }, anchorOptions);
+
+    expect(expected).toEqual<D>([
+      anchorOptions.map(([, n]) => n),
+      ['init', 'click', 'click', 'click', 'click'],
+    ]);
+  });
+
+  it(`updates URL with no before route handler`, async () => {
+    type A = Record<'test' | 'section', RegExp>;
+    type B = URLChangedStatus[];
+
+    const newUrl = '/test/123';
+    const expected: B = await browser.executeAsync(async(
+      a: string,
+      done
+    ) => {
+      const $w = window as unknown as Window;
+      const { appendLink, initObserver } = $w.TestHelpers;
+      const routes: A = {
+        test: /^\/test$/i,
+        section: /^\/test\/(?<test>[^\/]+)$/i,
+      };
+
+      const observer = initObserver({ routes: Object.values(routes) });
+      const { link, removeLink } = appendLink(a);
+
+      const linkClicked = new Promise((y) => {
+        link.addEventListener('click', () => {
+          y();
+          removeLink();
+        });
+      });
+
+      link.click();
+      await linkClicked;
+
+      done(observer.takeRecords().map(n => n.entryType));
+    }, newUrl);
+
+    expect(expected).toEqual<B>(['init', 'click']);
+  });
+
 });

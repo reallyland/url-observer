@@ -35,8 +35,6 @@ export interface URLChangedOption {
   scope: string;
   status: URLChangedStatus;
   url: URL;
-
-  skipCheck?: boolean;
 }
 
 export interface URLObserverCallbacks {
