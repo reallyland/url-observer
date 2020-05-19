@@ -206,6 +206,12 @@ export class URLObserver {
     });
   }
 
+  /**
+   * The following actions triggers a popstate event in browsers:
+   * 1. Updating a hash, e.g. `window.location.hash = '123';`, or
+   * 2. Clicking back button or calling `history.back()` in JS, or
+   * 3. Clicking forward button or calling `history.forward()` in JS.
+   */
   private _popstate(): void {
     this._updateUrl({
       scope: '',
@@ -247,9 +253,9 @@ export class URLObserver {
     /**
      * URL will always be replaced when:
      * 1. Not triggered by clicks
-     * 2. Less than defined 'dwellTime'
+     * 2. Less than defined 'dwellTime', e.g. period in between 0 (inc) and dwellTime (inc)
      */
-    const shouldReplace = status !== 'click' || (this.#lastChangedAt + this.#dwellTime > now);
+    const shouldReplace = status !== 'click' || (this.#lastChangedAt + this.#dwellTime >= now);
 
     if (shouldReplace) {
       $h.replaceState({}, '', fullUrl);

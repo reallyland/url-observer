@@ -270,4 +270,17 @@ export class TestHelpers {
       }
     });
   }
+
+  async waitForEvent(eventName: string, cb?: () => Promise<void> | void) {
+    return new Promise(async (y) => {
+      function onEventFired() {
+        $w.removeEventListener(eventName, onEventFired);
+        y();
+      }
+
+      $w.addEventListener(eventName, onEventFired);
+
+      if (typeof(cb) === 'function') await cb();
+    });
+  }
 }

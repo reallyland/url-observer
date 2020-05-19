@@ -31,7 +31,7 @@ describe('usages-hashchange', () => {
       done
     ) => {
       const $w = window as unknown as Window;
-      const { initObserver } = $w.TestHelpers;
+      const { initObserver, waitForEvent } = $w.TestHelpers;
       const routes: A = {
         test: /^\/test$/i,
         section: /^\/test\/(?<test>[^\/]+)$/i,
@@ -39,15 +39,16 @@ describe('usages-hashchange', () => {
 
       const observer = initObserver({ routes: Object.values(routes) });
 
-      $w.location.hash = a;
-      $w.addEventListener(b, () => {
-        const { pathname, hash } = $w.location;
-
-        done([
-          [pathname, hash].join(''),
-          observer.takeRecords().map(n => n.entryType),
-        ]);
+      await waitForEvent(b, () => {
+        $w.location.hash = a;
       });
+
+      const { pathname, hash } = $w.location;
+
+      done([
+        [pathname, hash].join(''),
+        observer.takeRecords().map(n => n.entryType),
+      ]);
     }, newHash, pushStateEventKey);
 
     expect(expected).toStrictEqual<C>([
