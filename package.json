@@ -63,13 +63,13 @@
     "@reallyland/tsconfig": "^2.0.0",
     "@reallyland/tslint-config": "^1.1.1",
     "@types/mocha": "^7.0.2",
-    "@wdio/cli": "^6.1.9",
-    "@wdio/local-runner": "^6.1.11",
+    "@wdio/cli": "^6.1.12",
+    "@wdio/local-runner": "^6.1.12",
     "@wdio/mocha-framework": "^6.1.8",
     "@wdio/sauce-service": "^6.1.9",
     "@wdio/selenium-standalone-service": "^6.0.16",
-    "@wdio/spec-reporter": "^6.1.9",
-    "es-dev-server": "^1.50.0",
+    "@wdio/spec-reporter": "^6.1.12",
+    "es-dev-server": "^1.50.6",
     "expect-webdriverio": "^1.1.5",
     "husky": "^4.2.3",
     "lit-element": "^2.3.1",
@@ -77,8 +77,8 @@
     "path-to-regexp": "^6.1.0",
     "shx": "^0.3.2",
     "tslint": "^6.1.0",
-    "typescript": "^3.9.2",
-    "webdriverio": "^6.1.9"
+    "typescript": "^3.9.3",
+    "webdriverio": "^6.1.12"
   },
   "engines": {
     "node": ">= 10.18.1",
