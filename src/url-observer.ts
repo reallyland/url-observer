@@ -229,10 +229,10 @@ export class URLObserver {
 
     if (route) {
       const {
-        pathRegExp,
         beforeRouteHandlers,
+        pathRegExp,
       } = route;
-      const matches = url.pathname.match(pathRegExp)?.groups ?? {};
+      const matches = this.#matcherCallback<Record<string, any>>(url.pathname, pathRegExp);
       const beforeRouteHandler = beforeRouteHandlers.get(scope);
 
       if (beforeRouteHandler) return beforeRouteHandler(matches, status);
@@ -248,7 +248,6 @@ export class URLObserver {
       url,
     } = option;
     const fullUrl = url.href;
-
     const now = $w.performance.now();
     /**
      * URL will always be replaced when:
@@ -285,6 +284,7 @@ export class URLObserver {
           detail: {
             scope,
             status,
+            // FIXME: Test not found route
             notFound: !findMatchedRoute(this.#routes, url.pathname),
             url: fullUrl,
           } as RouteEvent,
@@ -300,7 +300,8 @@ export class URLObserver {
       url,
     } = option;
 
-    // Run before route change handler
+    /** Run before route change handler */
+    // FIXME: Test the condition here
     if ((status === 'click' || status === 'manual') && scope) {
       if (!(await this._runScopedRouteHandler(url, status, scope))) return;
     }
