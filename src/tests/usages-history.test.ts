@@ -23,12 +23,13 @@ describe('usages-history', () => {
         _mockRecords: MockRecord[] = [];
 
         mock() {
-          window.history.pushState = (data: MockRecord['data'], title: string, url: string) => {
-            this._mockRecords.push({ data, title, url, type: 'push' });
-          };
-          window.history.replaceState = (data: MockRecord['data'], title: string, url: string) => {
-            this._mockRecords.push({ data, title, url, type: 'replace' });
-          };
+          const mockFn = (type: MockRecord['type']) =>
+            (data: MockRecord['data'], title: string, url: string) => {
+              this._mockRecords.push({ data, title, type, url });
+            };
+
+          window.history.pushState = mockFn('push');
+          window.history.replaceState = mockFn('replace');
         }
 
         restoreMock() {
