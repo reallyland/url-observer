@@ -284,7 +284,6 @@ export class URLObserver {
           detail: {
             scope,
             status,
-            // FIXME: Test not found route
             notFound: !findMatchedRoute(this.#routes, url.pathname),
             url: fullUrl,
           } as RouteEvent,
