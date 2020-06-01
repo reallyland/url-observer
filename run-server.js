@@ -1,5 +1,8 @@
-const { createConfig, startServer } = require('es-dev-server');
+const path = require('path');
 const { performance } = require('perf_hooks');
+
+const { createConfig, startServer } = require('es-dev-server');
+const im = require('istanbul-middleware');
 const Launcher = require('@wdio/cli').default;
 
 function debug(message, ...args) {
@@ -52,9 +55,12 @@ async function main() {
     logStartup: false,
     nodeResolve: true,
     port: PORT,
+    middlewares: [
+      im.createClientHandler(path.resolve('./dist')),
+    ],
   });
 
-  const { server } = await startServer(config);
+  const { app, server } = await startServer(config);
   const gracefulShutdown = (code) => {
     server.close((err) => {
       const mainDuration = performance.now() - mainStartAt;
