@@ -79,9 +79,9 @@ describe('usages-popstate', () => {
       const { link, removeLink } = appendLink(a);
 
       await waitForEvent('click', () => link.click());
-      removeLink();
-
       await waitForEvent(b, () => $w.history.back());
+
+      removeLink();
 
       done([
         $w.location.pathname,

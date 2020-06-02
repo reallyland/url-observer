@@ -41,11 +41,12 @@ describe('usages-routes', () => {
 
       const ev = await waitForEvent<CustomEvent<RouteEvent>>(b, () => {
         link.click();
-        removeLink();
       });
 
+      removeLink();
+
       done([
-        ev.detail,
+        ev?.detail,
         observer.takeRecords().map(n => n.entryType),
       ]);
     }, newUrl, pushStateEventKey);
@@ -83,11 +84,12 @@ describe('usages-routes', () => {
 
       const ev = await waitForEvent<CustomEvent<RouteEvent>>(b, () => {
         link.click();
-        removeLink();
       });
 
+      removeLink();
+
       done([
-        ev.detail,
+        ev?.detail,
         observer.takeRecords().map(n => n.entryType),
       ]);
     }, newUrl, pushStateEventKey);

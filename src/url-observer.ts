@@ -270,7 +270,7 @@ export class URLObserver {
     this.#entryList.addEntry({
       scope,
       entryType: status,
-      startTime: performance.now(),
+      startTime: $w.performance.now(),
       url: fullUrl,
     });
 
@@ -300,10 +300,7 @@ export class URLObserver {
     } = option;
 
     /** Run before route change handler */
-    // FIXME: Test the condition here
-    if ((status === 'click' || status === 'manual') && scope) {
-      if (!(await this._runScopedRouteHandler(url, status, scope))) return;
-    }
+    if (scope && !(await this._runScopedRouteHandler(url, status, scope))) return;
 
     this._updateUrl(option);
   }

@@ -271,14 +271,24 @@ export class TestHelpers {
     });
   }
 
-  async waitForEvent<T extends Event>(eventName: string, cb?: () => Promise<void> | void) {
+  async waitForEvent<T extends Event>(
+    eventName: string,
+    cb?: () => Promise<void> | void
+  ): Promise<T | undefined> {
     return new Promise<T>(async (y) => {
+      let listenerTimer = -1;
+
       function onEventFired(ev: T) {
+        window.clearTimeout(listenerTimer);
         $w.removeEventListener(eventName as unknown as any, onEventFired);
         y(ev);
       }
 
       $w.addEventListener(eventName as unknown as any, onEventFired);
+      listenerTimer = window.setTimeout(() => {
+        $w.removeEventListener(eventName as unknown as any, onEventFired);
+        y();
+      }, 3e3);
 
       if (typeof(cb) === 'function') await cb();
     });

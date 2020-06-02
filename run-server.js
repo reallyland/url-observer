@@ -7,7 +7,7 @@ function debug(message, ...args) {
     .replace('T', ' ')
     .replace('Z', '')
 
-  console.debug(
+  console.info(
     `[${timestamp}] ${message}`,
     ...args
   );
@@ -76,7 +76,7 @@ async function main() {
     }, (15e3));
   };
 
-  console.debug('');
+  console.info('');
   debug(`es-dev-server running at port ${PORT}...`);
 
   [

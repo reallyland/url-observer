@@ -1,5 +1,5 @@
 import { pushStateEventKey } from '../constants.js';
-import type { URLChangedStatus } from '../custom_typings.js';
+import type { RouteEvent, URLChangedStatus } from '../custom_typings.js';
 import type { URLObserver } from '../url-observer.js';
 import { HOST } from './config.js';
 
@@ -37,7 +37,7 @@ describe('usages-click', () => {
         done
       ) => {
         const $w = window as unknown as Window;
-        const { appendLink, initObserver } = $w.TestHelpers;
+        const { appendLink, initObserver, waitForEvent } = $w.TestHelpers;
         const routes: A = {
           test: /^\/test$/i,
           section: /^\/test\/(?<test>[^\/]+)$/i,
@@ -55,11 +55,13 @@ describe('usages-click', () => {
           ev.preventDefault();
           result.push(null);
         });
-        $w.addEventListener(b, () => {
-          result.push('click');
-        });
 
-        link.click();
+        if (
+          await waitForEvent<CustomEvent<RouteEvent>>(b, () => {
+            link.click();
+          })
+        ) result.push('click');
+
         removeLink();
 
         done([
@@ -109,6 +111,7 @@ describe('usages-click', () => {
           ($w as any).UsagesClick.metaKey = ev.metaKey;
           removeLink();
         });
+
         $w.addEventListener(b, () => {
           ($w as any).UsagesClick.button = -2;
           removeLink();
@@ -671,7 +674,7 @@ describe('usages-click', () => {
       done
     ) => {
       const $w = window as unknown as Window;
-      const { appendLink, initObserver } = $w.TestHelpers;
+      const { appendLink, initObserver, waitForEvent } = $w.TestHelpers;
       const routes: A = {
         test: /^\/test$/i,
         section: /^\/test\/(?<test>[^\/]+)$/i,
@@ -679,17 +682,13 @@ describe('usages-click', () => {
 
       const observer = initObserver({ routes: Object.values(routes) });
       const { link, removeLink } = appendLink(a);
-      const linkClicked = new Promise((y) => {
-        link.addEventListener('click', () => {
-          y();
-          removeLink();
-        });
+
+      await waitForEvent('click', async () => {
+        await observer.updateHistory(a);
+        link.click();
       });
 
-      await observer.updateHistory(a);
-
-      link.click();
-      await linkClicked;
+      removeLink();
 
       done(observer.takeRecords().map(n => n.entryType));
     }, newUrl);
@@ -714,7 +713,7 @@ describe('usages-click', () => {
       done
     ) => {
       const $w = window as unknown as Window;
-      const { appendLink, initObserver } = $w.TestHelpers;
+      const { appendLink, initObserver, waitForEvent } = $w.TestHelpers;
       const routes: A = {
         test: /^\/test$/i,
         section: /^\/test\/(?<test>[^\/]+)$/i,
@@ -725,12 +724,6 @@ describe('usages-click', () => {
 
       for (const [na, nb] of a) {
         const { link, removeLink } = appendLink(na, nb);
-        const linkClicked = new Promise((y) => {
-          link.addEventListener('click', () => {
-            y();
-            removeLink();
-          });
-        });
 
         observer.add({
           pathRegExp: routes.section,
@@ -741,8 +734,11 @@ describe('usages-click', () => {
           scope: nb[Object.keys(nb)[0]],
         });
 
-        link.click();
-        await linkClicked;
+        await waitForEvent('click', () => {
+          link.click();
+        });
+
+        removeLink();
       }
 
       done([
@@ -767,7 +763,7 @@ describe('usages-click', () => {
       done
     ) => {
       const $w = window as unknown as Window;
-      const { appendLink, initObserver } = $w.TestHelpers;
+      const { appendLink, initObserver, waitForEvent } = $w.TestHelpers;
       const routes: A = {
         test: /^\/test$/i,
         section: /^\/test\/(?<test>[^\/]+)$/i,
@@ -776,15 +772,11 @@ describe('usages-click', () => {
       const observer = initObserver({ routes: Object.values(routes) });
       const { link, removeLink } = appendLink(a);
 
-      const linkClicked = new Promise((y) => {
-        link.addEventListener('click', () => {
-          y();
-          removeLink();
-        });
+      await waitForEvent('click', () => {
+        link.click();
       });
 
-      link.click();
-      await linkClicked;
+      removeLink();
 
       done(observer.takeRecords().map(n => n.entryType));
     }, newUrl);

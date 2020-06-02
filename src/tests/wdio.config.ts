@@ -4,7 +4,7 @@ export const config: WdioConfig = {
   runner: 'local',
   specs: [
     './dist/tests/**/*.test.js',
-    // './dist/tests/**/usages-routes.test.js',
+    // './dist/tests/**/usages-click.test.js',
   ],
   exclude: [],
   maxInstances: 36,
@@ -56,7 +56,7 @@ export const config: WdioConfig = {
     fullTrace: true,
     inlineDiffs: true,
     require: ['@babel/register'],
-    // timeout: 30e3,
+    // timeout: 8e3,
     ui: 'bdd',
   },
 };
