@@ -13,7 +13,7 @@ declare global {
     observerList: URLObserver[];
     pathToRegExp: typeof pathToRegexp;
     router: URLObserver;
-    URLObserver: typeof URLObserver;
     TestHelpers: TestHelpers;
+    URLObserver: typeof URLObserver;
   }
 }

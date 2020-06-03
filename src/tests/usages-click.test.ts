@@ -2,6 +2,7 @@ import { pushStateEventKey } from '../constants.js';
 import type { RouteEvent, URLChangedStatus } from '../custom_typings.js';
 import type { URLObserver } from '../url-observer.js';
 import { HOST } from './config.js';
+import { itSkip } from './webdriverio-test-helpers.js';
 
 describe('usages-click', () => {
   /** Always load the page to reset URL history */
@@ -74,7 +75,7 @@ describe('usages-click', () => {
       expect(expected).toStrictEqual<C>(['/test.html', [null], ['init']]);
     });
 
-    it(`'<click>.metaKey=true'`, async () => {
+    itSkip(['firefox'])(`'<click>.metaKey=true'`, async () => {
       type A = Record<'test' | 'section', RegExp>;
       type B = (null | URLChangedStatus)[];
       interface C {
@@ -145,7 +146,7 @@ describe('usages-click', () => {
       expect(expected).toStrictEqual<D>(['/test.html', { button: 0, metaKey: true }, ['init']]);
     });
 
-    it(`'<click>.ctrlKey=true'`, async () => {
+    itSkip(['firefox'])(`'<click>.ctrlKey=true'`, async () => {
       type A = Record<'test' | 'section', RegExp>;
       type B = (null | URLChangedStatus)[];
       interface C {
@@ -215,7 +216,7 @@ describe('usages-click', () => {
       expect(expected).toStrictEqual<D>(['/test.html', { button: 0, ctrlKey: true }, ['init']]);
     });
 
-    it(`'<click>.shiftKey=true'`, async () => {
+    itSkip(['firefox'])(`'<click>.shiftKey=true'`, async () => {
       type A = Record<'test' | 'section', RegExp>;
       type B = (null | URLChangedStatus)[];
       interface C {

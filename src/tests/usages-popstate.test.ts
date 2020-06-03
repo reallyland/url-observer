@@ -2,6 +2,7 @@ import { popStateEventKey } from '../constants.js';
 import type { URLChangedStatus } from '../custom_typings.js';
 import type { URLObserver } from '../url-observer.js';
 import { HOST } from './config.js';
+import { itSkip } from './webdriverio-test-helpers.js';
 
 describe('usages-popstate', () => {
   /** Always load the page to reset URL history */
@@ -57,7 +58,7 @@ describe('usages-popstate', () => {
     ]);
   });
 
-  it(`fires popstate event when triggered by history.back()`, async () => {
+  itSkip(['firefox'])(`fires popstate event when triggered by history.back()`, async () => {
     type A = Record<'test' | 'section', RegExp>;
     type B = URLChangedStatus[];
     type C = [string, B];

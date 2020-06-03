@@ -4,7 +4,6 @@ export const config: WdioConfig = {
   runner: 'local',
   specs: [
     './dist/tests/**/*.test.js',
-    // './dist/tests/**/usages-click.test.js',
   ],
   exclude: [],
   maxInstances: 36,
@@ -19,23 +18,23 @@ export const config: WdioConfig = {
           '--auto-open-devtools-for-tabs',
           '--headless',
           '--no-sandbox',
-          // '--window-size=800,600',
-          '--window-size=1734,707',
+          '--window-size=800,600',
+          // '--window-size=1734,707',
         ],
         w3c: true,
       },
       maxInstances: 10,
     },
-    // {
-    //   browserName: 'firefox',
-    //   'moz:firefoxOptions': {
-    //     args: [
-    //       '--window-size=800,600',
-    //       '--headless',
-    //     ],
-    //   },
-    //   maxInstances: 10,
-    // },
+    {
+      browserName: 'firefox',
+      'moz:firefoxOptions': {
+        args: [
+          '--window-size=800,600',
+          '--headless',
+        ],
+      },
+      maxInstances: 10,
+    },
   ],
   logLevel: 'error',
   bail: 1,

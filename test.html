@@ -6,6 +6,13 @@
   <title>URLObserver test</title>
 </head>
 <body>
+  <script>
+    /** Workaround to apply babel polyfills globally for RegExp capturing groups */
+    void function t() {
+      console.assert('/test/123'.match(/^\/test\/(?<test>[^\/]+)/i)?.groups.test === '123')
+    }();
+  </script>
+
   <script type="module">
     import { URLObserver } from '/dist/url-observer.js';
     import { pathToRegexp } from '/node_modules/path-to-regexp/dist.es2015/index.js';

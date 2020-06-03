@@ -1,3 +1,5 @@
+export type BrowserName = 'chrome' | 'firefox' | 'microsoftedge' | 'safari';
+
 type ChromeOptions = WebDriver.DesiredCapabilities['chromeOptions'] & {
   w3c?: boolean;
 };

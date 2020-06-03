@@ -260,7 +260,7 @@ describe('usages-route-handler', () => {
     async function t() {
       type A = Record<'test' | 'section', RegExp>;
       type B = [string, Record<string, string>][];
-      type C = [B, URLChangedStatus[]];
+      type C = [B, string[], URLChangedStatus[]];
 
       const testOptions: B = [
         ['/test/123', { scope: ':default' }],
@@ -280,13 +280,14 @@ describe('usages-route-handler', () => {
       ) => {
         const $w = window as unknown as Window;
         const { appendLink, initObserver, waitForEvent } = $w.TestHelpers;
+        const history: string[] = [];
+        const result: B = [];
         const routes: A = {
           test: /^\/test$/i,
           section: /^\/test\/(?<test>[^\/]+)$/i,
         };
 
         const observer = initObserver({ routes: Object.values(routes) });
-        const result: B = [];
 
         for (const [urlPath, testScope] of a) {
           const { link, removeLink } = appendLink(urlPath, testScope);
@@ -310,16 +311,20 @@ describe('usages-route-handler', () => {
           removeLink();
 
           if (ev) result.push(temp);
+
+          history.push($w.location.pathname);
         }
 
         done([
           result,
+          history,
           observer.takeRecords().map(n => n.entryType),
         ]);
       }, testOptions, pushStateEventKey);
 
       expect(expected).toStrictEqual<C>([
         [],
+        Array.from(Array(testOptions.length), () => '/test.html'),
         ['init'],
       ]);
     }
@@ -330,7 +335,7 @@ describe('usages-route-handler', () => {
     async () => {
       type A = Record<'test' | 'section', RegExp>;
       type B = [string, string][];
-      type C = [B, URLChangedStatus[]];
+      type C = [B, string[], URLChangedStatus[]];
 
       const testOptions: B = [
         ['/test/123', ':default'],
@@ -343,13 +348,14 @@ describe('usages-route-handler', () => {
       ) => {
         const $w = window as unknown as Window;
         const { initObserver, waitForEvent } = $w.TestHelpers;
+        const history: string[] = [];
+        const result: B = [];
         const routes: A = {
           test: /^\/test$/i,
           section: /^\/test\/(?<test>[^\/]+)$/i,
         };
 
         const observer = initObserver({ routes: Object.values(routes) });
-        const result: B = [];
 
         for (const [urlPath, testScope] of a) {
           let temp: B[number] = ['nil', 'nil'];
@@ -370,16 +376,20 @@ describe('usages-route-handler', () => {
           });
 
           if (ev) result.push(temp);
+
+          history.push($w.location.pathname);
         }
 
         done([
           result,
+          history,
           observer.takeRecords().map(n => n.entryType),
         ]);
       }, testOptions, pushStateEventKey);
 
       expect(expected).toStrictEqual<C>([
         [],
+        Array.from(Array(testOptions.length), () => '/test.html'),
         ['init'],
       ]);
     }

@@ -92,10 +92,7 @@ describe('url-observer', () => {
     expect(isFn).toBeTruthy();
   });
 
-  (
-    /** As of writing, only Chrome and Webkit stable support RegExp capturing groups */
-    browser.isChrome ? it : it.skip
-  )(`runs matcher with native RegExp capturing groups on URL change`, async () => {
+  it(`runs matcher with native RegExp capturing groups on URL change`, async () => {
     type A = 'page' | 'section';
     interface B {
       test?: string;
