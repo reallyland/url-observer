@@ -23,29 +23,29 @@
     "email": "wes.ngrongsen@gmail.com",
     "url": "https://github.com/motss"
   },
+  "main": "./dist/my-element.js",
+  "module": "./dist/my-element.js",
+  "typings": "./dist/my-element.d.ts",
   "files": [
     "dist/*.d.ts.map",
     "dist/*.d.ts",
     "dist/*.js.map",
     "dist/*.js"
   ],
-  "main": "./dist/my-element.js",
-  "module": "./dist/my-element.js",
-  "typings": "./dist/my-element.d.ts",
   "scripts": {
     "build": "tsc -p tsconfig.prod.json",
     "build:config": "tsc -p tsconfig.wdio.json",
-    "clean": "shx rm -rf dist/ .*cache *.log",
+    "clean": "shx rm -rf .*cache *.log dist/ logs/",
     "lint": "npm run lint:debug -- --config tslint.prod.json",
     "lint:debug": "tslint --project tsconfig.json --format stylish",
     "prepublishOnly": "npm run clean && npm run lint && npm run build",
-    "serve:compile": "es-dev-server --app-index=demo.html --node-resolve --port=3000 --watch --babel --babel-config=babel.config.json",
     "serve": "es-dev-server --app-index=demo.html --node-resolve --port=3000 --watch",
-    "test": "npm run clean && npm run lint && npm run ts",
-    "test:dev": "npm run build:config && node run-server.js --config-file dist/tests/wdio.config.js",
+    "serve:compile": "es-dev-server --app-index=demo.html --node-resolve --port=3000 --watch --babel --babel-config=babel.config.json",
+    "test": "npm run build && npm run test:dev",
+    "test:dev": "node run-server.js --config-file dist/tests/wdio.config.js",
+    "test:sl:dev": "node run-server.js --config-file dist/tests/wdio.sl.config.js",
     "ts": "tsc",
-    "upgrade": "npm outdated --dev && npm update --dev && npm audit fix",
-    "watch": "tsc --watch"
+    "watch": "npm run clean && tsc --watch"
   },
   "husky": {
     "hooks": {
