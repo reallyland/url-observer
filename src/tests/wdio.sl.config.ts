@@ -31,7 +31,11 @@ console.warn('1', {
 
 export const config: WdioConfig = {
   ...baseConfig,
-  services: ['sauce'],
+  services: [
+    ['sauce', {
+      sauceConnect: true,
+    }],
+  ],
   specs: [],
   // specs: [
   //   './dist/tests/**/*.test.js',
