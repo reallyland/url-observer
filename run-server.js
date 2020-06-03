@@ -2,6 +2,8 @@ const { createConfig, startServer } = require('es-dev-server');
 const { performance } = require('perf_hooks');
 const Launcher = require('@wdio/cli').default;
 
+const babelConfig = require('./babel.config.json');
+
 function debug(message, ...args) {
   const timestamp = new Date().toJSON()
     .replace('T', ' ')
@@ -46,8 +48,10 @@ async function main() {
   const PORT = process.env.PORT || 4000;
   const mainStartAt = performance.now();
   const config = createConfig({
+    babelConfig,
     appIndex: 'test.html',
-    compatibility: 'always',
+    babel: true,
+    compatibility: 'none',
     compress: true,
     dedupeModules: true,
     logErrorsToBrowser: true,

@@ -3,6 +3,7 @@ import type { URLObserver } from '../url-observer.js';
 import { HOST } from './config.js';
 import type { URLObserverWithDebug } from './custom_test_typings.js';
 import type { AppendLinkResult } from './test-helpers.js';
+import { itSkip } from './webdriverio-test-helpers.js';
 
 describe('url-observer', () => {
   /** Always load the page to reset URL history */
@@ -92,7 +93,9 @@ describe('url-observer', () => {
     expect(isFn).toBeTruthy();
   });
 
-  it(`runs matcher with native RegExp capturing groups on URL change`, async () => {
+  itSkip([
+    'microsoftedge',
+  ])(`runs matcher with native RegExp capturing groups on URL change`, async () => {
     type A = 'page' | 'section';
     interface B {
       test?: string;

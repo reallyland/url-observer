@@ -1,8 +1,9 @@
 {
   "presets": [
     ["@babel/preset-env", {
-      "shippedProposals": true,
+      "bugfixes": true,
       "targets": {
+        "edge": "18",
         "node": "12"
       }
     }]
