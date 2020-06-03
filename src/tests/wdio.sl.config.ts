@@ -10,7 +10,7 @@ const baseCapability: SauceLabsCapability = {
     seleniumVersion: '3.141.59',
   },
   specs: [
-    './dist/tests/**/*.spec.js',
+    './dist/tests/**/*.test.js',
   ],
   browserName: 'googlechrome',
   platformName: 'windows 10',
@@ -18,10 +18,19 @@ const baseCapability: SauceLabsCapability = {
 const sauceLabsAccessKey = process.env.SAUCE_ACCESS_KEY || '';
 const sauceLabsUser = process.env.SAUCE_USERNAME || '';
 
+console.warn('1', {
+  sauceLabsAccessKey: '*'.repeat(sauceLabsAccessKey.length - 4) + sauceLabsAccessKey.slice(-4),
+  sauceLabsUser: '*'.repeat(sauceLabsUser.length - 2) + sauceLabsUser.slice(-2),
+});
+
 export const config: WdioConfig = {
   ...baseConfig,
   services: ['sauce'],
   specs: [],
+  // specs: [
+  //   './dist/tests/**/*.test.js',
+  //   // './dist/tests/**/usages-click.test.js',
+  // ],
   capabilities: [
     {
       ...baseCapability,
@@ -32,19 +41,14 @@ export const config: WdioConfig = {
         screenResolution: '1024x768',
       },
     },
-    {
-      ...baseCapability,
-      browserName: 'microsoftedge',
-      browserVersion: '18',
-    },
+    // {
+    //   ...baseCapability,
+    //   browserName: 'microsoftedge',
+    //   browserVersion: '18',
+    // },
   ] as SauceLabsCapability[],
 
-  region: 'us',
   user: sauceLabsUser,
   key: sauceLabsAccessKey,
-  sauceConnect: true,
-  sauceConnectOpts: {
-    user: sauceLabsUser,
-    accessKey: sauceLabsAccessKey,
-  },
+  region: 'us',
 };

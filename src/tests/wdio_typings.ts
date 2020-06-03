@@ -56,6 +56,7 @@ export interface SauceLabsOptions {
   seleniumVersion?: string;
   tags?: string[];
   timeZone?: string;
+  tunnelIdentifier?: string;
 }
 
 interface SauceLabsChromeCapability extends SauceLabsBrowserCapability, Omit<ChromeCapability, 'browserName'> {
@@ -217,14 +218,44 @@ interface SeleniumConfig extends BaseConfig {
   seleniumArgs?: SeleniumArgs;
 }
 
+/** Refer to https://github.com/bermi/sauce-connect-launcher#advanced-usage. */
 interface SauceLabsConfig extends BaseConfig {
-  services: ['sauce'];
-  user?: string;
+  capabilities: SauceLabsCapability[];
   key?: string;
   region?: 'us' | 'eu';
+  services: ['sauce'] | ['sauce', SauceLabsServiceOption][];
+  user?: string;
+}
+
+interface SauceLabsSauceConnectOptions {
+  username?: string;
+  accessKey?: string;
+  verbose?: boolean;
+  verboseDebugging?: boolean;
+  vv?: boolean;
+  port?: number;
+  proxy?: string;
+  logfile?: string;
+  logStats?: number;
+  maxLogsize?: number;
+  doctor?: boolean;
+  tunnelIdentifier?: string;
+  fastFailRegexps?: RegExp | RegExp[];
+  directDomains?: string | string[];
+  logger?(message: string): void;
+  readyFileId?: string;
+  connectRetries?: number;
+  connectRetryTimeout?: number;
+  downloadRetries?: number;
+  downloadRetryTimeout?: number;
+  exe?: string;
+  detached?: boolean;
+  connectVersion?: string;
+}
+
+interface SauceLabsServiceOption {
   sauceConnect?: boolean;
-  sauceConnectOpts: Record<'user' | 'accessKey', string>;
-  capabilities: SauceLabsCapability[];
+  sauceConnectOpts?: SauceLabsSauceConnectOptions;
 }
 
 interface LocalConfig extends BaseConfig, Pick<SeleniumConfig, 'capabilities'> {

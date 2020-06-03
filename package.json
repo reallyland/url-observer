@@ -43,7 +43,7 @@
     "serve:compile": "es-dev-server --app-index=demo.html --node-resolve --port=3000 --watch --babel --babel-config=babel.config.json",
     "test": "npm run build && npm run test:dev",
     "test:dev": "node --trace-deprecation run-server.js --config-file dist/tests/wdio.config.js",
-    "test:sl:dev": "node --trace-deprecation run-server.js --config-file dist/tests/wdio.sl.config.js",
+    "test:sl:dev": "env-cmd -f ./.env node --trace-deprecation run-server.js --config-file dist/tests/wdio.sl.config.js",
     "ts": "tsc",
     "watch": "npm run clean && tsc --watch"
   },
@@ -69,6 +69,7 @@
     "@wdio/sauce-service": "^6.1.16",
     "@wdio/selenium-standalone-service": "^6.1.14",
     "@wdio/spec-reporter": "^6.1.14",
+    "env-cmd": "^10.1.0",
     "es-dev-server": "^1.54.0",
     "expect-webdriverio": "^1.1.5",
     "husky": "^4.2.3",
