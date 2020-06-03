@@ -19,8 +19,14 @@ const sauceLabsAccessKey = process.env.SAUCE_ACCESS_KEY || '';
 const sauceLabsUser = process.env.SAUCE_USERNAME || '';
 
 console.warn('1', {
-  sauceLabsAccessKey: '*'.repeat(sauceLabsAccessKey.length - 4) + sauceLabsAccessKey.slice(-4),
-  sauceLabsUser: '*'.repeat(sauceLabsUser.length - 2) + sauceLabsUser.slice(-2),
+  key:
+    (
+      '*'.repeat(Math.max(0, sauceLabsAccessKey.length - 4)) + sauceLabsAccessKey.slice(-4)
+    ) || 'nil',
+  user:
+    (
+      '*'.repeat(Math.max(0, sauceLabsUser.length - 2)) + sauceLabsUser.slice(-2)
+    ) || 'nil',
 });
 
 export const config: WdioConfig = {
