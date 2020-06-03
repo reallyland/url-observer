@@ -32,9 +32,7 @@ console.warn('1', {
 export const config: WdioConfig = {
   ...baseConfig,
   services: [
-    ['sauce', {
-      sauceConnect: true,
-    }],
+    ['sauce', { sauceConnect: true }],
   ],
   specs: [],
   // specs: [

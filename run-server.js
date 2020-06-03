@@ -50,7 +50,6 @@ async function main() {
   const config = createConfig({
     babelConfig,
     appIndex: 'test.html',
-    babel: true,
     compress: true,
     logErrorsToBrowser: true,
     logStartup: false,
