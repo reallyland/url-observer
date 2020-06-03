@@ -60,7 +60,7 @@ jobs:
       - name: Build
         if: "env.CI_SKIP == 'false'"
         run: |
-          npm run build && npm run build:config
+          npm run ts && npm run build:config
 
       - name: Check build
         if: "env.CI_SKIP == 'false'"
