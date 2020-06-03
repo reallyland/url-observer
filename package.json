@@ -42,8 +42,8 @@
     "serve": "es-dev-server --app-index=demo.html --node-resolve --port=3000 --watch",
     "serve:compile": "es-dev-server --app-index=demo.html --node-resolve --port=3000 --watch --babel --babel-config=babel.config.json",
     "test": "npm run build && npm run test:dev",
-    "test:dev": "node run-server.js --config-file dist/tests/wdio.config.js",
-    "test:sl:dev": "node run-server.js --config-file dist/tests/wdio.sl.config.js",
+    "test:dev": "node --trace-deprecation run-server.js --config-file dist/tests/wdio.config.js",
+    "test:sl:dev": "node --trace-deprecation run-server.js --config-file dist/tests/wdio.sl.config.js",
     "ts": "tsc",
     "watch": "npm run clean && tsc --watch"
   },
@@ -63,10 +63,10 @@
     "@reallyland/tsconfig": "^2.0.0",
     "@reallyland/tslint-config": "^1.1.1",
     "@types/mocha": "^7.0.2",
-    "@wdio/cli": "^6.1.15",
-    "@wdio/local-runner": "^6.1.14",
+    "@wdio/cli": "^6.1.16",
+    "@wdio/local-runner": "^6.1.16",
     "@wdio/mocha-framework": "^6.1.14",
-    "@wdio/sauce-service": "^6.1.14",
+    "@wdio/sauce-service": "^6.1.16",
     "@wdio/selenium-standalone-service": "^6.1.14",
     "@wdio/spec-reporter": "^6.1.14",
     "es-dev-server": "^1.54.0",
@@ -78,7 +78,7 @@
     "shx": "^0.3.2",
     "tslint": "^6.1.0",
     "typescript": "^3.9.3",
-    "webdriverio": "^6.1.14"
+    "webdriverio": "^6.1.16"
   },
   "engines": {
     "node": ">= 10.18.1",
