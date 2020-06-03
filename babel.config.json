@@ -3,7 +3,6 @@
     ["@babel/preset-env", {
       "shippedProposals": true,
       "targets": {
-        "edge": "18",
         "node": "12"
       }
     }]
