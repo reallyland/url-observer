@@ -9,9 +9,6 @@ const baseCapability: SauceLabsCapability = {
     screenResolution: '800x600',
     seleniumVersion: '3.141.59',
   },
-  // specs: [
-  //   './dist/tests/**/*.test.js',
-  // ],
   browserName: 'googlechrome',
   platformName: 'windows 10',
 };
@@ -23,7 +20,6 @@ export const config: WdioConfig = {
   services: [
     ['sauce', { sauceConnect: true }],
   ],
-  // specs: [],
   capabilities: [
     {
       ...baseCapability,

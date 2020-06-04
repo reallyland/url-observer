@@ -22,9 +22,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        # NOTE: usages-clicks.ctrlKey fails to pass on Chrome in macos
-        # os: [macos-latest, ubuntu-latest, windows-latest]
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest]
         target: [14.x]
     timeout-minutes: 120
 
