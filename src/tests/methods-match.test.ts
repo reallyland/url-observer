@@ -1,6 +1,7 @@
 import type { MatchedRoute } from '../custom_typings.js';
 import type { URLObserver } from '../url-observer.js';
 import { HOST } from './config.js';
+import { itSkip } from './webdriverio-test-helpers.js';
 
 describe('methods-match', () => {
   /** Always load the page to reset URL history */
@@ -17,7 +18,7 @@ describe('methods-match', () => {
     });
   });
 
-  it(`finds a matched route`, async () => {
+  itSkip(['microsoftedge'])(`finds a matched route`, async () => {
     interface A {
       test: string;
     }

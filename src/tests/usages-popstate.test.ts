@@ -20,7 +20,7 @@ describe('usages-popstate', () => {
     });
   });
 
-  it(`fires popstate event when triggered by hashchange`, async () => {
+  itSkip(['safari'])(`fires popstate event when triggered by hashchange`, async () => {
     type A = Record<'test' | 'section', RegExp>;
     type B = URLChangedStatus[];
     type C = [string, B];

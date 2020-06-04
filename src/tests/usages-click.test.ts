@@ -75,7 +75,7 @@ describe('usages-click', () => {
       expect(expected).toStrictEqual<C>(['/test.html', [null], ['init']]);
     });
 
-    itSkip(['firefox', 'safari'])(`'<click>.metaKey=true'`, async () => {
+    itSkip(['firefox', 'microsoftedge', 'safari'])(`'<click>.metaKey=true'`, async () => {
       type A = Record<'test' | 'section', RegExp>;
       type B = (null | URLChangedStatus)[];
       interface C {
@@ -146,7 +146,7 @@ describe('usages-click', () => {
       expect(expected).toStrictEqual<D>(['/test.html', { button: 0, metaKey: true }, ['init']]);
     });
 
-    itSkip(['firefox'])(`'<click>.ctrlKey=true'`, async () => {
+    itSkip(['firefox', 'safari'])(`'<click>.ctrlKey=true'`, async () => {
       type A = Record<'test' | 'section', RegExp>;
       type B = (null | URLChangedStatus)[];
       interface C {
