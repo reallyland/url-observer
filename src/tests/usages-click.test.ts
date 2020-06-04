@@ -216,7 +216,7 @@ describe('usages-click', () => {
       expect(expected).toStrictEqual<D>(['/test.html', { button: 0, ctrlKey: true }, ['init']]);
     });
 
-    itSkip(['firefox', 'safari'])(`'<click>.shiftKey=true'`, async () => {
+    itSkip(['firefox', 'microsoftedge', 'safari'])(`'<click>.shiftKey=true'`, async () => {
       type A = Record<'test' | 'section', RegExp>;
       type B = (null | URLChangedStatus)[];
       interface C {

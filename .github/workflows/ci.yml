@@ -45,8 +45,9 @@ jobs:
           node-version: ${{ matrix.target }}
 
       - name: List versions
-        if: "env.CI_SKIP == 'false'"
         continue-on-error: true
+        if: "env.CI_SKIP == 'false'"
+        shell: bash
         run: |
           node -v && npm version && which npm && pwd && npx envinfo
 
