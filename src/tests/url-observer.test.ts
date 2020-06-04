@@ -284,21 +284,25 @@ describe('url-observer', () => {
 
       const links: AppendLinkResult[] = a.map(n => appendLink(n));
 
+      /** Push all URLs into history */
       for (const { link, removeLink } of links) {
-        /** Push 1st and 2nd URL, then replace 2nd with 3rd URL. */
-        if (link.textContent !== a[2]) await new Promise(y => setTimeout(y, 2e3));
-
         await waitForEvent(b, () => {
           link.click();
         });
 
         removeLink();
+
+        await new Promise(y => setTimeout(y, 2e3));
       }
 
-      await waitForEvent('popstate', () => {
-        $w.history.back();
-      });
+      /** Pop last and 2nd URLs */
+      for (const _ of '12') {
+        await waitForEvent('popstate', () => {
+          $w.history.back();
+        });
+      }
 
+      /** Current URL should be the 1st URL */
       done($w.location.href);
     }, newUrls, pushStateEventKey);
 
