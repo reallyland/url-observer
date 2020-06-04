@@ -58,7 +58,10 @@ describe('usages-popstate', () => {
     ]);
   });
 
-  itSkip(['firefox'])(`fires popstate event when triggered by history.back()`, async () => {
+  itSkip([
+    'firefox',
+    'safari',
+  ])(`fires popstate event when triggered by history.back()`, async () => {
     type A = Record<'test' | 'section', RegExp>;
     type B = URLChangedStatus[];
     type C = [string, B];
