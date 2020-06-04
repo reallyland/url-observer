@@ -55,7 +55,7 @@ export const config: WdioConfig = {
     fullTrace: true,
     inlineDiffs: true,
     require: ['@babel/register'],
-    // timeout: 8e3,
+    timeout: 30e3,
     ui: 'bdd',
   },
 };

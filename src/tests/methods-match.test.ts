@@ -14,6 +14,7 @@ describe('methods-match', () => {
       const obsList: URLObserver[] = window.observerList;
 
       for (const obs of obsList) obs.disconnect();
+
       done();
     });
   });

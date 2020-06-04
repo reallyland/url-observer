@@ -4,7 +4,7 @@ import { HOST } from './config.js';
 import type { URLObserverWithDebug } from './custom_test_typings.js';
 import type { TriggerEventsEventName, TriggerEventsResult } from './test-helpers.js';
 
-describe('methods-observer', () => {
+describe('methods-observe', () => {
   /** Always load the page to reset URL history */
   beforeEach(async () => {
     await browser.url(HOST);
@@ -15,6 +15,7 @@ describe('methods-observer', () => {
       const obsList: URLObserver[] = window.observerList;
 
       for (const obs of obsList) obs.disconnect();
+
       done();
     });
   });
