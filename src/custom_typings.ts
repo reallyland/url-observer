@@ -38,7 +38,7 @@ export interface URLChangedOption {
 }
 
 export interface URLObserverCallbacks {
-  callback(list: URLObserverEntryList, object: URLObserver): void;
+  callback(list: URLObserverEntryList, observer: URLObserver): void;
   matcherCallback<T>(pathname: string, pathRegExp: RegExp): T;
 }
 

@@ -6,11 +6,11 @@
 
 <hr />
 
-<!-- [![Follow me][follow-me-badge]][follow-me-url] -->
+<a href="https://www.buymeacoffee.com/RLmMhgXFb" target="_blank" rel="noopener noreferrer"><img src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" alt="Buy Me A Coffee" style="height: 20px !important;width: auto !important;" ></a>
+[![tippin.me][tippin-me-badge]][tippin-me-url]
+[![Follow me][follow-me-badge]][follow-me-url]
 
 [![Version][version-badge]][version-url]
-[![lit-element][lit-element-version-badge]][lit-element-url]
-[![Node version][node-version-badge]][node-version-url]
 [![MIT License][mit-license-badge]][mit-license-url]
 
 [![Downloads][downloads-badge]][downloads-url]
@@ -19,33 +19,27 @@
 [![Bundlephobia][bundlephobia-badge]][bundlephobia-url]
 
 [![Dependency Status][daviddm-badge]][daviddm-url]
-<!-- [![CircleCI][circleci-badge]][circleci-url] -->
 
 [![codebeat badge][codebeat-badge]][codebeat-url]
 [![Codacy Badge][codacy-badge]][codacy-url]
 [![Language grade: JavaScript][lgtm-badge]][lgtm-url]
 [![Code of Conduct][coc-badge]][coc-url]
 
-> Better element for the web
+> Inspired by PerformanceObserver but for observing history on a browser.
 
 ## Table of contents <!-- omit in toc -->
 
 - [Pre-requisites](#pre-requisites)
 - [Installation](#installation)
 - [Usage](#usage)
-  - [HTML (with native ES modules)](#html-with-native-es-modules)
-  - [JS/ TS file (w/ native ES modules)](#js-ts-file-w-native-es-modules)
+- [API References](#api-references)
 - [Contributing](#contributing)
   - [Code of Conduct](#code-of-conduct)
 - [License](#license)
 
 ## Pre-requisites
 
-- [Java 8][java-url] _(`web-component-tester` works without any issue with Java 8)_
-- [Node.js][nodejs-url] >= 8.16.0
-- [NPM][npm-url] >= 6.4.1 ([NPM][npm-url] comes with [Node.js][nodejs-url], no separate installation is required.)
-- (Optional for non-[VS Code][vscode-url] users) [Syntax Highlighting for lit-html in VS Code][vscode-lit-html-url]
-- [web-component-tester][web-component-tester-url] >= 6.9.2 (For running tests, it's recommended to install globally on your system due to its insanely huge install size by running `npm i -g web-component-tester`.)
+- ES2018+ (_This module uses [RegExp named capture groups] for route matching._)
 
 ## Installation
 
@@ -56,50 +50,106 @@ $ npm install url-observer
 
 ## Usage
 
-### HTML (with native ES modules)
-
-```html
-<!-- For the sake of brevity, the HTML below is just for reference -->
-<!doctype html>
-<html>
-  <head>
-    <!-- Native ES modules -->
-    <script type="module" src="/path/to/my-element.js"></script>
-  </head>
-
-  <body>
-    <!-- Element declaration -->
-    <my-element></my-element>
-  </body>
-</html>
-```
-
-### JS/ TS file (w/ native ES modules)
-
 ```ts
-import { css, html, LitElement } from 'lit-element';
-import 'url-observer.js';
+import 'url-observer';
 
-class MainApp extends LitElement {
-  public static styles = [
-    css`
-    :host {
-      display: block;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-    `,
-  ];
-
-  protected render() {
-    return html`
-    <my-element></my-element>
-    `;
+const observer = new URLObserver((list, observer) => {
+  for (const entry of list.getEntries()) {
+    /** Process entry for each URL update */ 
   }
-}
+});
+const routes = [
+  /^\/test$\//i,
+  /^\/test\/(?<test>[^\/]+)$/i,
+];
+const options = {
+  dwellTime: 2e3, /** Default dwellTime. Set -1 to always push new URL */
+  debug: false, /** Set to enable debug mode. This exposes hidden `routes` property. */
+  matcherCallback() {
+    /**
+     * Override how route matching works internally.
+     * By default, ES2018's RegExp named capture groups are used.
+     */
+  },
+};
+
+/** Call .observe() to start observing history */
+observe.observe(routes, options);
+
+/** Call .add() to add new route or before route handler to existing registered route */
+observer.add({
+  handleEvent: () => {
+    /** Do anything before route changes. Return true to navigate to new route. */
+    return true;
+  }
+  pathRegExp: routes[0],
+  /**
+   * A scoped route handler enables multiple before route handler to be registered to the
+   * same route. E.g.
+   * 
+   * A .scope property or `scope` attribute can be set in an anchor tag so that URLObserver
+   * knows which before route handler it needs to trigger before navigating to a new URL.
+   * 
+   * When .scope (or `scope`) is an empty string, it defaults to ':default', which is the 
+   * default scope value when registering a route unless specified.
+   * 
+   * 1. <a href="/test/123">/test/456</a>
+   *    - No before route handler will be triggered on link click as it is not a scoped link.
+   * 
+   * 2. <a href="/test/123" scope>/test/123</a>
+   *    - Only before route handler registered to ':default' scope will be triggered.
+   * 
+   * 3. <a href="/test/123" scope="456">/test/456</a>
+   *    - Only before route handler registered to '456' scope will be triggered.
+   * 
+   */
+  scope: '',
+});
+
+/** Dynamically add new route without before route handler */
+observer.add({ pathRegExp: /^\/test2$/i });
+
+/** Call .disconnect() to stop observing history */
+observer.disconnect();
+
+/** Call .match() to determine if current URL is being observed by URLObserver */
+const {
+  /** Return true for a matched route */
+  found,
+  /**
+   * Return URL parameters after matching the route RegExp with current URL. E.g.
+   * 
+   * 1. /^\/test/i
+   *    - This does not output any matches
+   * 2. /^\/test\/(?<test>[^\/]+)$/i
+   *    - This matches URL like '/test/123' and returns { test: 123  }. However, this requires
+   *      ES2018's RegExp named capture groups to work as expected.
+   */
+  matches,
+} = observer.match();
+
+/** Remove a route from the observer */
+observer.remove(routes[0]);
+
+/** Remove a before route handler from an observing route */
+observer.remove(routes[1], '456');
+
+/** Return the history entries */
+observer.takeRecords();
+
+/** Async-ly call .updateHistory to manually update to new URL */
+await observer.updateHistory('/test/789');
+
+/** 
+ * Async-ly call .updateHistory to manually update to new URL and trigger before route handler
+ * with defined scope value.
+ */
+await observer.updateHistory('/test/456', '456');
 ```
+
+## API References
+
+* [URLObserver methods]
 
 ## Contributing
 
@@ -121,6 +171,8 @@ Please note that this project is released with a [Contributor Code of Conduct][c
 [vscode-lit-html-url]: https://github.com/mjbvz/vscode-lit-html
 [web-component-tester-url]: https://github.com/Polymer/tools/tree/master/packages/web-component-tester
 [lit-element-url]: https://github.com/Polymer/lit-element
+[RegExp named capture groups]: https://github.com/tc39/proposal-regexp-named-groups
+[URLObserver methods]: /api-references.md
 
 <!-- MDN -->
 [array-mdn-url]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array
@@ -135,7 +187,9 @@ Please note that this project is released with a [Contributor Code of Conduct][c
 [string-mdn-url]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String
 
 <!-- Badges -->
-<!-- [follow-me-badge]: https://flat.badgen.net/twitter/follow/Rong Sen Ng?icon=twitter -->
+[tippin-me-badge]: https://badgen.net/badge/%E2%9A%A1%EF%B8%8Ftippin.me/@igarshmyb/F0918E
+[follow-me-badge]: https://flat.badgen.net/twitter/follow/igarshmyb?icon=twitter
+
 
 [version-badge]: https://flat.badgen.net/npm/v/url-observer?icon=npm
 [lit-element-version-badge]: https://flat.badgen.net/npm/v/lit-element/latest?icon=npm&label=lit-element
@@ -156,7 +210,8 @@ Please note that this project is released with a [Contributor Code of Conduct][c
 [coc-badge]: https://flat.badgen.net/badge/code%20of/conduct/pink
 
 <!-- Links -->
-<!-- [follow-me-url]: https://twitter.com/Rong Sen Ng?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=url-observer -->
+[tippin-me-url]: https://tippin.me/@igarshmyb
+[follow-me-url]: https://twitter.com/igarshmyb
 
 [version-url]: https://www.npmjs.com/package/url-observer
 [node-version-url]: https://nodejs.org/en/download
