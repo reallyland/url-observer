@@ -55,7 +55,7 @@ export const config: WdioConfig = {
     fullTrace: true,
     inlineDiffs: true,
     require: ['@babel/register'],
-    timeout: 30e3,
+    timeout: 30e3, /** Increase timeout does help in resolving some odd timeout issues */
     ui: 'bdd',
   },
 };

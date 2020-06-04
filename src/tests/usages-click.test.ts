@@ -346,7 +346,7 @@ describe('usages-click', () => {
       expect(expected).toStrictEqual<D>(['/test.html', { button: 0 }, ['init']]);
     });
 
-    it(`<click>.<#shadowTarget> is not an anchor element`, async () => {
+    itSkip(['microsoftedge'])(`<click>.<#shadowTarget> is not an anchor element`, async () => {
       type A = Record<'test' | 'section', RegExp>;
       type B = (null | URLChangedStatus)[];
       interface C {
