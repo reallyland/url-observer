@@ -1,3 +1,4 @@
+import { pushStateEventKey } from '../constants.js';
 import type { MatchedRoute } from '../custom_typings.js';
 import type { URLObserver } from '../url-observer.js';
 import { HOST } from './config.js';
@@ -25,9 +26,12 @@ describe('methods-match', () => {
     }
     type B = MatchedRoute<A>;
 
-    const expected: B = await browser.executeAsync(async (done) => {
+    const expected: B = await browser.executeAsync(async (
+      a: string,
+      done
+    ) => {
       const $w = window as unknown as Window;
-      const { appendLink, initObserver } = $w.TestHelpers;
+      const { appendLink, initObserver, waitForEvent } = $w.TestHelpers;
 
       const observer = initObserver({
         routes: [/^\/test\/(?<test>[^\/]+)/i],
@@ -35,11 +39,14 @@ describe('methods-match', () => {
       });
       const { link, removeLink } = appendLink('/test/123');
 
-      link.click();
+      await waitForEvent(a, () => {
+        link.click();
+      });
+
       removeLink();
 
       done(observer.match<B>());
-    });
+    }, pushStateEventKey);
 
     expect(expected).toEqual<B>({
       found: true,
@@ -53,9 +60,12 @@ describe('methods-match', () => {
     }
     type B = MatchedRoute<A>;
 
-    const expected: B = await browser.executeAsync(async (done) => {
+    const expected: B = await browser.executeAsync(async (
+      a: string,
+      done
+    ) => {
       const $w = window as unknown as Window;
-      const { appendLink, initObserver } = $w.TestHelpers;
+      const { appendLink, initObserver, waitForEvent } = $w.TestHelpers;
 
       const observer = initObserver({
         routes: [/^\/test$/i],
@@ -63,11 +73,14 @@ describe('methods-match', () => {
       });
       const { link, removeLink } = appendLink('/test/123');
 
-      link.click();
+      await waitForEvent(a, () => {
+        link.click();
+      });
+
       removeLink();
 
       done(observer.match<B>());
-    });
+    }, pushStateEventKey);
 
     expect(expected).toEqual<B>({
       found: false,
