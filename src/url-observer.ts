@@ -168,7 +168,8 @@ export class URLObserver {
     const el = ev.target as HTMLAnchorElement;
     const anchor = el.tagName === 'A' ? el : (
       el.closest<HTMLAnchorElement>('a') ||
-      (ev.composedPath() as HTMLAnchorElement[]).find(n => n.tagName === 'A')
+      /** This is to ensure it works even on browsers yet to support Shadow DOM */
+      (ev.composedPath?.() as HTMLAnchorElement[])?.find(n => n.tagName === 'A')
     );
 
     if (

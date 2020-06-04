@@ -1,3 +1,4 @@
+import { pushStateEventKey } from '../constants.js';
 import type { MatchedRoute, RouteValue, URLObserverEntryProperties } from '../custom_typings.js';
 import type { URLObserver } from '../url-observer.js';
 import { HOST } from './config.js';
@@ -58,9 +59,13 @@ describe('url-observer', () => {
     type A = [URLObserverEntryProperties[], boolean];
 
     const newUrl = '/test';
-    const expected: A = await browser.executeAsync(async (a: string, done) => {
+    const expected: A = await browser.executeAsync(async (
+      a: string,
+      b: string,
+      done
+    ) => {
       const $w = window as unknown as Window;
-      const { appendLink, initObserver } = $w.TestHelpers;
+      const { appendLink, initObserver, waitForEvent } = $w.TestHelpers;
 
       let linkClicked = false;
 
@@ -81,10 +86,13 @@ describe('url-observer', () => {
 
       observer.observe([/^\/test$/i]);
 
-      linkClicked = true;
-      link.click();
+      await waitForEvent(b, () => {
+        linkClicked = true;
+        link.click();
+      });
+
       removeLink();
-    }, newUrl);
+    }, newUrl, pushStateEventKey);
 
     const [urlEntries, isFn] = expected;
 
@@ -105,10 +113,11 @@ describe('url-observer', () => {
     const newUrls = ['/test', '/test/123'];
     const expected: MatchedRoute<B>[] = await browser.executeAsync(async (
       a: string[],
+      b: string,
       done
     ) => {
       const $w = window as unknown as Window;
-      const { appendLink, initObserver } = $w.TestHelpers;
+      const { appendLink, initObserver, waitForEvent } = $w.TestHelpers;
       const routes: Record<A, RegExp> = {
         page: /^\/test$/i,
         section: /^\/test\/(?<test>[^\/]+)$/i,
@@ -121,14 +130,17 @@ describe('url-observer', () => {
       const links: AppendLinkResult[] = a.map(n => appendLink(n));
       const results: MatchedRoute<B>[] = [];
 
-      for (const l of links) {
-        l.link.click();
-        results.push(observer.match<B>());
-        l.removeLink();
+      for (const { link, removeLink } of links) {
+        await waitForEvent(b, () => {
+          link.click();
+          results.push(observer.match<B>());
+        });
+
+        removeLink();
       }
 
       done(results);
-    }, newUrls);
+    }, newUrls, pushStateEventKey);
 
     expect(expected).toHaveLength(2);
     expect(expected).toEqual([
@@ -146,10 +158,11 @@ describe('url-observer', () => {
     const newUrls = ['/test', '/test/123'];
     const expected: MatchedRoute<B>[] = await browser.executeAsync(async (
       a: string[],
+      b: string,
       done
     ) => {
       const $w = window as unknown as Window;
-      const { appendLink, initObserver } = $w.TestHelpers;
+      const { appendLink, initObserver, waitForEvent } = $w.TestHelpers;
       const routes: Record<A, RegExp> = {
         page: $w.pathToRegExp('/test'),
         section: $w.pathToRegExp('/test/:test'),
@@ -177,14 +190,17 @@ describe('url-observer', () => {
       const links: AppendLinkResult[] = a.map(n => appendLink(n));
       const results: MatchedRoute<B>[] = [];
 
-      for (const l of links) {
-        l.link.click();
-        results.push(observer.match<B>());
-        l.removeLink();
+      for (const { link, removeLink } of links) {
+        await waitForEvent(b, () => {
+          link.click();
+          results.push(observer.match<B>());
+        });
+
+        removeLink();
       }
 
       done(results);
-    }, newUrls);
+    }, newUrls, pushStateEventKey);
 
     expect(expected).toHaveLength(2);
     expect(expected).toEqual([
@@ -254,10 +270,11 @@ describe('url-observer', () => {
     const newUrls = ['/test', '/test/123', '/test/456'];
     const expected: B = await browser.executeAsync(async (
       a: string[],
+      b: string,
       done
     ) => {
       const $w = window as unknown as Window;
-      const { appendLink, initObserver } = $w.TestHelpers;
+      const { appendLink, initObserver, waitForEvent } = $w.TestHelpers;
       const routes: Record<A, RegExp> = {
         page: /^\/test$/i,
         section: /^\/test\/(?<test>[^\/]+)$/i,
@@ -271,24 +288,19 @@ describe('url-observer', () => {
         /** Push 1st and 2nd URL, then replace 2nd with 3rd URL. */
         if (link.textContent !== a[2]) await new Promise(y => setTimeout(y, 2e3));
 
-        link.click();
+        await waitForEvent(b, () => {
+          link.click();
+        });
+
         removeLink();
       }
 
-      const popStateDone = new Promise((y) => {
-        function popStateDoneCallback() {
-          y();
-          $w.removeEventListener('popstate', popStateDoneCallback);
-        }
-
-        $w.addEventListener('popstate', popStateDoneCallback);
+      await waitForEvent('popstate', () => {
+        $w.history.back();
       });
 
-      $w.history.back();
-      await popStateDone;
-
       done($w.location.href);
-    }, newUrls);
+    }, newUrls, pushStateEventKey);
 
     const url = new URL(expected);
 
@@ -302,10 +314,11 @@ describe('url-observer', () => {
     const newUrls = ['/test', '/test/123'];
     const expected: B = await browser.executeAsync(async (
       a: string[],
+      b: string,
       done
     ) => {
       const $w = window as unknown as Window;
-      const { appendLink, initObserver } = $w.TestHelpers;
+      const { appendLink, initObserver, waitForEvent } = $w.TestHelpers;
       const routes: Record<A, RegExp> = {
         page: /^\/test$/i,
         section: /^\/test\/(?<test>[^\/]+)$/i,
@@ -320,25 +333,20 @@ describe('url-observer', () => {
       });
       const links: AppendLinkResult[] = a.map(n => appendLink(n));
 
-      for (const l of links) {
-        l.link.click();
-        l.removeLink();
+      for (const { link, removeLink } of links) {
+        await waitForEvent(b, () => {
+          link.click();
+        });
+
+        removeLink();
       }
 
-      const popStateDone = new Promise((y) => {
-        function popStateDoneCallback() {
-          y();
-          ($w as Window).removeEventListener('popstate', popStateDoneCallback);
-        }
-
-        ($w as Window).addEventListener('popstate', popStateDoneCallback);
+      await waitForEvent('popstate', () => {
+        ($w as Window).history.back();
       });
 
-      ($w as Window).history.back();
-      await popStateDone;
-
       done($w.location.href);
-    }, newUrls);
+    }, newUrls, pushStateEventKey);
 
     const url = new URL(expected);
 
