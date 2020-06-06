@@ -18,10 +18,11 @@
 [![Packagephobia][packagephobia-badge]][packagephobia-url]
 [![Bundlephobia][bundlephobia-badge]][bundlephobia-url]
 
+[![ci][ga-ci-badge]][ga-ci-url]
+[![Sauce Labs][ga-sl-badge]][ga-sl-url]
 [![Dependency Status][daviddm-badge]][daviddm-url]
 
 [![codebeat badge][codebeat-badge]][codebeat-url]
-[![Codacy Badge][codacy-badge]][codacy-url]
 [![Language grade: JavaScript][lgtm-badge]][lgtm-url]
 [![Code of Conduct][coc-badge]][coc-url]
 
@@ -186,8 +187,6 @@ Please note that this project is released with a [Contributor Code of Conduct][c
 
 
 [version-badge]: https://flat.badgen.net/npm/v/url-observer?icon=npm
-[lit-element-version-badge]: https://flat.badgen.net/npm/v/lit-element/latest?icon=npm&label=lit-element
-[node-version-badge]: https://flat.badgen.net/npm/node/url-observer
 [mit-license-badge]: https://flat.badgen.net/npm/license/url-observer
 
 [downloads-badge]: https://flat.badgen.net/npm/dm/url-observer
@@ -195,11 +194,11 @@ Please note that this project is released with a [Contributor Code of Conduct][c
 [packagephobia-badge]: https://flat.badgen.net/packagephobia/install/url-observer
 [bundlephobia-badge]: https://flat.badgen.net/bundlephobia/minzip/url-observer
 
+[ga-ci-badge]: https://github.com/reallyland/url-observer/workflows/ci/badge.svg?branch=master
+[ga-sl-badge]: https://github.com/reallyland/url-observer/workflows/Sauce%20Labs/badge.svg?branch=master
 [daviddm-badge]: https://flat.badgen.net/david/dep/reallyland/url-observer
-<!-- [circleci-badge]: https://flat.badgen.net/circleci/github/reallyland/url-observer?icon=circleci -->
 
-[codebeat-badge]: https://codebeat.co/badges/123
-[codacy-badge]: https://api.codacy.com/project/badge/Grade/123
+[codebeat-badge]: https://codebeat.co/badges/381c2791-cf71-4725-81da-c8f4d19d8735
 [lgtm-badge]: https://flat.badgen.net/lgtm/grade/javascript/g/reallyland/url-observer?icon=lgtm
 [coc-badge]: https://flat.badgen.net/badge/code%20of/conduct/pink
 
@@ -208,17 +207,16 @@ Please note that this project is released with a [Contributor Code of Conduct][c
 [follow-me-url]: https://twitter.com/igarshmyb
 
 [version-url]: https://www.npmjs.com/package/url-observer
-[node-version-url]: https://nodejs.org/en/download
 [mit-license-url]: /LICENSE
 
 [downloads-url]: https://www.npmtrends.com/url-observer
 [packagephobia-url]: https://packagephobia.now.sh/result?p=url-observer
 [bundlephobia-url]: https://bundlephobia.com/result?p=url-observer
 
-[circleci-url]: https://circleci.com/gh/reallyland/url-observer/tree/master
+[ga-ci-url]: https://github.com/reallyland/url-observer/actions?query=workflow%3Aci
+[ga-sl-url]: https://github.com/reallyland/url-observer/actions?query=workflow%3A%22Sauce+Labs%22
 [daviddm-url]: https://david-dm.org/reallyland/url-observer
 
-[codebeat-url]: https://codebeat.co/projects/<codebeat_path>
-[codacy-url]: https://www.codacy.com/app/<codacy_path>
-[lgtm-url]: https://lgtm.com/projects/g/<lgtm_path>
+[codebeat-url]: https://codebeat.co/projects/github-com-reallyland-url-observer-master
+[lgtm-url]: https://lgtm.com/projects/g/reallyland/url-observer/context:javascript
 [coc-url]: /CODE-OF-CONDUCT.md
