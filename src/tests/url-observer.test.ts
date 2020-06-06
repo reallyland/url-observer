@@ -102,7 +102,7 @@ describe('url-observer', () => {
     expect(isFn).toBeTruthy();
   });
 
-  it(`does not run .observer() more than once`, async () => {
+  it(`does not run .observe() more than once`, async () => {
     type A = URLObserverEntryProperties[];
 
     const expected: A = await browser.executeAsync(async (done) => {
