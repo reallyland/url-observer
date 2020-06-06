@@ -284,7 +284,7 @@ observer.observe([routes.test, routes.section], {
 Remove existing route or before route handler attached to a route by specifying the `scope` value. When `scope` is not specified or is an empty string, a route will be removed. To remove the default before route handler, you need to explicitly specify `:default`.
 
 * `pathRegExp` <[RegExp]> Observing route.
-* `scope` <?[string | undefined]> Optional scope value. This must be explicitly specified when removing a before route handler, even for a `:default` before route handler.
+* `scope` <?[string] | [undefined]> Optional scope value. This must be explicitly specified when removing a before route handler, even for a `:default` before route handler.
 * returns: <[boolean]> Return `true` when a route or before route handler is removed successfully.
 
 ```ts
@@ -369,3 +369,4 @@ console.log(observer.routes);
 [Regexp]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp
 [Set]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Set
 [string]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String
+[undefined]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/undefined

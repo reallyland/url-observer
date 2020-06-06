@@ -1,7 +1,7 @@
 <div align="center" style="text-align: center;">
   <h1 style="border-bottom: none;">url-observer</h1>
 
-  <p>URLObserver observes URL changes in a web browser</p>
+  <p>URLObserver observes URL changes in web browsers</p>
 </div>
 
 <hr />
@@ -25,7 +25,7 @@
 [![Language grade: JavaScript][lgtm-badge]][lgtm-url]
 [![Code of Conduct][coc-badge]][coc-url]
 
-> Inspired by PerformanceObserver but for observing history on a browser.
+> Inspired by PerformanceObserver but for observing history on browsers.
 
 ## Table of contents <!-- omit in toc -->
 
