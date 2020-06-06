@@ -32,7 +32,11 @@
     "dist/*.d.ts.map",
     "dist/*.d.ts",
     "dist/*.js.map",
-    "dist/*.js"
+    "dist/*.js",
+    "dist/helpers/*.d.ts.map",
+    "dist/helpers/*.d.ts",
+    "dist/helpers/*.js.map",
+    "dist/helpers/*.js"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.prod.json",
