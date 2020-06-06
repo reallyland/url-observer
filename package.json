@@ -1,7 +1,6 @@
 {
   "name": "url-observer",
   "version": "0.1.0",
-  "private": true,
   "description": "URLObserver observes URL changes in a web browser",
   "keywords": [
     "hashchange",
