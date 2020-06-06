@@ -1,6 +1,6 @@
 import type { URLChangedStatus, URLObserverEntryProperties } from './custom_typings.js';
 
-export class URLObserverEntry implements URLObserverEntryProperties {
+export class URLObserverEntry implements Readonly<URLObserverEntryProperties> {
   public readonly entryType: URLChangedStatus;
   public readonly scope: string;
   public readonly startTime: number;
@@ -18,6 +18,10 @@ export class URLObserverEntry implements URLObserverEntryProperties {
     this.url = url;
   }
 
+  public get [Symbol.toStringTag](): string {
+    return 'URLObserverEntry';
+  }
+
   public toJSON(): URLObserverEntryProperties {
     return {
       entryType: this.entryType,
@@ -26,4 +30,5 @@ export class URLObserverEntry implements URLObserverEntryProperties {
       url: this.url,
     };
   }
+
 }

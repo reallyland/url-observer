@@ -12,6 +12,7 @@ import { cache } from 'lit-html/directives/cache.js';
 import { until } from 'lit-html/directives/until.js';
 
 import { popStateEventKey, pushStateEventKey } from '../constants.js';
+import type { RouteEvent } from '../custom_typings.js';
 import type { DialogClosedEvent, Page, RouteMatch as RouteMatch } from './custom_demo_typings.js';
 import { routes } from './demo.js';
 import { lazyImport } from './helpers/lazy-import.js';
@@ -36,7 +37,7 @@ export class DemoView extends LitElement {
   @property({ type: String })
   private _page!: Page;
 
-  #onLoad!: () => void;
+  #onLoad!: (ev: CustomEvent<RouteEvent<RouteMatch>>) => void;
 
   #pages = new Map<Page, () => Promise<TemplateResult>>([
     ['about', lazyImport('/dist/demo/demo-about.js', () => html`<demo-about></demo-about>`)],
@@ -60,7 +61,7 @@ export class DemoView extends LitElement {
   public constructor() {
     super();
 
-    this.#onLoad = () => this._onLoad();
+    this.#onLoad = ev => this._onLoad(ev);
   }
 
   public disconnectedCallback() {
@@ -133,10 +134,8 @@ export class DemoView extends LitElement {
     `;
   }
 
-  private async _onLoad() {
-    const { found, matches } = router.match<RouteMatch>();
-
-    this._notFound = !found;
+  private async _onLoad(ev: CustomEvent<RouteEvent<RouteMatch>>) {
+    const { found, matches } = ev.detail;
 
     if (found) this._page = matches.page || 'home';
   }

@@ -4,6 +4,10 @@ import { URLObserverEntry } from './url-observer-entry.js';
 export class URLObserverEntryList {
   #entryList: URLObserverEntry[] = [];
 
+  public get [Symbol.toStringTag](): string {
+    return 'URLObserverEntryList';
+  }
+
   public addEntry(option: URLObserverEntryProperties): void {
     this.#entryList.push(new URLObserverEntry(option));
   }

@@ -149,7 +149,7 @@ await observer.updateHistory('/test/456', '456');
 
 ## API References
 
-* [URLObserver methods]
+* [URLObserver]
 
 ## Contributing
 
@@ -162,17 +162,11 @@ Please note that this project is released with a [Contributor Code of Conduct][c
 [MIT License](https://motss.mit-license.org/) © Rong Sen Ng
 
 <!-- References -->
-[typescript-url]: https://github.com/Microsoft/TypeScript
-[java-url]: https://www.java.com/en/download
-[nodejs-url]: https://nodejs.org
 [npm-url]: https://www.npmjs.com
-[node-releases-url]: https://nodejs.org/en/download/releases
-[vscode-url]: https://code.visualstudio.com
-[vscode-lit-html-url]: https://github.com/mjbvz/vscode-lit-html
-[web-component-tester-url]: https://github.com/Polymer/tools/tree/master/packages/web-component-tester
-[lit-element-url]: https://github.com/Polymer/lit-element
 [RegExp named capture groups]: https://github.com/tc39/proposal-regexp-named-groups
-[URLObserver methods]: /api-references.md
+[typescript-url]: https://github.com/Microsoft/TypeScript
+[URLObserver]: /API_REFERENCES.md
+[vscode-url]: https://code.visualstudio.com
 
 <!-- MDN -->
 [array-mdn-url]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array

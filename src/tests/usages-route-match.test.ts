@@ -21,10 +21,13 @@ describe('usages-routes', () => {
 
   it(`pushes URL that is a matched route`, async () => {
     type A = Record<'test' | 'section', RegExp>;
-    type B = [RouteEvent, URLChangedStatus[]];
+    interface B {
+      test?: string;
+    }
+    type C = [RouteEvent, URLChangedStatus[]];
 
     const newUrl = '/test/123';
-    const expected: B = await browser.executeAsync(async (
+    const expected: C = await browser.executeAsync(async (
       a: string,
       b: string,
       done
@@ -39,7 +42,7 @@ describe('usages-routes', () => {
       const { link, removeLink } = appendLink(a);
       const observer = initObserver({ routes: Object.values(routes) });
 
-      const ev = await waitForEvent<CustomEvent<RouteEvent>>(b, () => {
+      const ev = await waitForEvent<CustomEvent<RouteEvent<B>>>(b, () => {
         link.click();
       });
 
@@ -51,9 +54,10 @@ describe('usages-routes', () => {
       ]);
     }, newUrl, pushStateEventKey);
 
-    expect(expected).toStrictEqual<B>([
+    expect(expected).toStrictEqual<C>([
       {
-        notFound: false,
+        found: false,
+        matches: { test: 123 },
         scope: '',
         status: 'click',
         url: `http://localhost:4000${newUrl}`,
@@ -64,10 +68,13 @@ describe('usages-routes', () => {
 
   it(`pushes URL that is a not-found route`, async () => {
     type A = Record<'test' | 'section', RegExp>;
-    type B = [RouteEvent, URLChangedStatus[]];
+    interface B {
+      test?: string;
+    }
+    type C = [RouteEvent, URLChangedStatus[]];
 
     const newUrl = '/test2';
-    const expected: B = await browser.executeAsync(async (
+    const expected: C = await browser.executeAsync(async (
       a: string,
       b: string,
       done
@@ -82,7 +89,7 @@ describe('usages-routes', () => {
       const { link, removeLink } = appendLink(a);
       const observer = initObserver({ routes: Object.values(routes) });
 
-      const ev = await waitForEvent<CustomEvent<RouteEvent>>(b, () => {
+      const ev = await waitForEvent<CustomEvent<RouteEvent<B>>>(b, () => {
         link.click();
       });
 
@@ -94,9 +101,10 @@ describe('usages-routes', () => {
       ]);
     }, newUrl, pushStateEventKey);
 
-    expect(expected).toStrictEqual<B>([
+    expect(expected).toStrictEqual<C>([
       {
-        notFound: true,
+        found: true,
+        matches: {},
         scope: '',
         status: 'click',
         url: `http://localhost:4000${newUrl}`,

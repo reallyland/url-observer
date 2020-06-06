@@ -7,11 +7,12 @@ import type {
   URLChangedOption,
   URLChangedStatus,
   URLObserverCallbacks,
-  URLObserverProperties,
+  URLObserverOption,
 } from './custom_typings.js';
 import { findMatchedRoute } from './helpers/find-matched-route.js';
 import { urlParamMatcher } from './helpers/url-param-matcher.js';
 import { URLObserverEntryList } from './url-observer-entry-list.js';
+import type { URLObserverEntry } from './url-observer-entry.js';
 
 const $w = window;
 const $h = $w.history;
@@ -19,13 +20,13 @@ const $l = $w.location;
 
 export class URLObserver {
   #callback?: URLObserverCallbacks['callback'];
+  #connected: boolean = false;
   #debug: boolean = false;
   #dwellTime: number = 2e3;
   #entryList: URLObserverEntryList = new URLObserverEntryList();
   #lastChangedAt: number = -1;
   #matcherCallback: URLObserverCallbacks['matcherCallback'] = urlParamMatcher;
   #routes: Routes = new Map();
-  #connected: boolean = false;
 
   public constructor(callback?: URLObserverCallbacks['callback']) {
     this._popstate = this._popstate.bind(this);
@@ -35,6 +36,10 @@ export class URLObserver {
     if (typeof(callback) === 'function') this.#callback = callback;
 
     return this;
+  }
+
+  public get [Symbol.toStringTag](): string {
+    return 'URLObserver';
   }
 
   public add<T>(option: RouteOption<T>): void {
@@ -91,7 +96,11 @@ export class URLObserver {
     };
   }
 
-  public observe(routes: RegExp[], option?: Partial<URLObserverProperties>): void {
+  public observe(routes: RegExp[], option?: Partial<URLObserverOption>): void {
+    // FIXME: Add test
+    /** An observer instance can only be observed once */
+    if (this.#connected) return;
+
     (Array.isArray(routes) ? routes : []).forEach(n => this.add({ pathRegExp: n }));
 
     if (option) {
@@ -129,8 +138,8 @@ export class URLObserver {
     });
   }
 
-  public remove(route: RegExp, scope?: RouteOption['scope']): boolean {
-    const routeKey = route.toString();
+  public remove(pathRegExp: RegExp, scope?: RouteOption['scope']): boolean {
+    const routeKey = pathRegExp.toString();
 
     if (typeof(scope) === 'string') {
       for (const [pathKey, { beforeRouteHandlers }] of this.#routes) {
@@ -145,7 +154,7 @@ export class URLObserver {
     return this.#routes.delete(routeKey);
   }
 
-  public takeRecords() {
+  public takeRecords(): URLObserverEntry[] {
     return this.#entryList.getEntries();
   }
 
@@ -278,6 +287,8 @@ export class URLObserver {
     /** Run observer callback if any */
     if (this.#callback) this.#callback(this.#entryList, this);
 
+    const foundRouteRegExp = findMatchedRoute(this.#routes, url.pathname)?.pathRegExp;
+
     $w.dispatchEvent(
       new CustomEvent(
         status === 'popstate' ? popStateEventKey : pushStateEventKey,
@@ -285,8 +296,12 @@ export class URLObserver {
           detail: {
             scope,
             status,
-            notFound: !findMatchedRoute(this.#routes, url.pathname),
             url: fullUrl,
+            ...(
+              foundRouteRegExp ?
+                { found: true, matches: this.#matcherCallback(url.pathname, foundRouteRegExp) } :
+                { found: false, matches: {} }
+            ),
           } as RouteEvent,
         }
       )
@@ -316,7 +331,9 @@ declare global {
   // #endregion HTML element type extensions
 
   interface WindowEventMap {
-    [popStateEventKey]: CustomEvent<RouteEvent>;
-    [pushStateEventKey]: CustomEvent<RouteEvent>;
+    [popStateEventKey]: CustomEvent<RouteEvent<any>>;
+    [pushStateEventKey]: CustomEvent<RouteEvent<any>>;
   }
 }
+
+// FIXME: Limitation: No multiple observers on the same page.

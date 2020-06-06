@@ -15,8 +15,10 @@ export interface MatchedRoute<T extends Record<string, any> = Record<string, any
   matches: T;
 }
 
-export interface RouteEvent extends Omit<URLChangedOption, 'url'> {
-  notFound: boolean;
+export interface RouteEvent<T extends Record<string, any> = Record<string, any>> extends
+  MatchedRoute<T>,
+  Omit<URLChangedOption, 'url'>
+{
   url: string;
 }
 
@@ -43,13 +45,13 @@ export interface URLObserverCallbacks {
 }
 
 export interface URLObserverEntryProperties {
-  readonly entryType: URLChangedStatus;
-  readonly scope: string;
-  readonly startTime: number;
-  readonly url: string;
+  entryType: URLChangedStatus;
+  scope: string;
+  startTime: number;
+  url: string;
 }
 
-export interface URLObserverProperties extends Pick<URLObserverCallbacks, 'matcherCallback'> {
+export interface URLObserverOption extends Pick<URLObserverCallbacks, 'matcherCallback'> {
   debug?: boolean;
   dwellTime?: number;
 }

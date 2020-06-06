@@ -1,6 +1,6 @@
 import { html, LitElement } from 'lit-element';
 import { popStateEventKey, pushStateEventKey } from '../constants.js';
-import type { URLObserverCallbacks, URLObserverProperties } from '../custom_typings.js';
+import type { URLObserverCallbacks, URLObserverOption } from '../custom_typings.js';
 
 export type TriggerEventsEventName = 'click' | 'hashchange' | 'popstate';
 export type TriggerEventsResult = Record<TriggerEventsEventName, (null | TriggerEventsEventName)[]>;
@@ -18,7 +18,7 @@ export interface AppendShadowElementResult<T> extends AppendElementResult<T> {
 }
 export interface InitObserverOption {
   routes: RegExp[];
-  observerOption: Partial<URLObserverProperties>;
+  observerOption: Partial<URLObserverOption>;
   callback: URLObserverCallbacks['callback'];
 }
 
