@@ -2,6 +2,7 @@ import { pushStateEventKey } from '../constants.js';
 import type { RouteEvent, URLChangedStatus } from '../custom_typings.js';
 import type { URLObserver } from '../url-observer.js';
 import { HOST } from './config.js';
+import { itSkip } from './webdriverio-test-helpers.js';
 
 describe('usages-route-match', () => {
   /** Always load the page to reset URL history */
@@ -19,7 +20,9 @@ describe('usages-route-match', () => {
     });
   });
 
-  it(`pushes URL that is a matched route`, async () => {
+  itSkip([
+    'microsoftedge',
+  ])(`pushes URL that is a matched route`, async () => {
     type A = Record<'test' | 'section', RegExp>;
     interface B {
       test?: string;
