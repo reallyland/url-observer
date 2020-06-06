@@ -33,7 +33,7 @@ $w.addEventListener('load', () => {
   // router.observe(Object.values(routes), { dwellTime: -1 });
   router.observe(Object.values(routes), { debug: true, dwellTime: -1 });
 
-  console.info('URLObserver is running...');
+  console.info('URLObserver is running...', router.takeRecords());
 
   $w.router = router;
 });

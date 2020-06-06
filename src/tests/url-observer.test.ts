@@ -102,6 +102,24 @@ describe('url-observer', () => {
     expect(isFn).toBeTruthy();
   });
 
+  it(`does not run .observer() more than once`, async () => {
+    type A = URLObserverEntryProperties[];
+
+    const expected: A = await browser.executeAsync(async (done) => {
+      const $w = window as unknown as Window;
+      const { initObserver } = $w.TestHelpers;
+
+      const observer = initObserver();
+
+      observer.observe([/^\/test$/i]);
+      observer.observe([/^\/test$/i]);
+
+      done(observer.takeRecords().map(n => n.toJSON()));
+    });
+
+    expect(expected.map(n => n.entryType)).toEqual(['init']);
+  });
+
   itSkip([
     'microsoftedge',
   ])(`runs matcher with native RegExp capturing groups on URL change`, async () => {

@@ -97,7 +97,6 @@ export class URLObserver {
   }
 
   public observe(routes: RegExp[], option?: Partial<URLObserverOption>): void {
-    // FIXME: Add test
     /** An observer instance can only be observed once */
     if (this.#connected) return;
 

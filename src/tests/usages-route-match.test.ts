@@ -3,7 +3,7 @@ import type { RouteEvent, URLChangedStatus } from '../custom_typings.js';
 import type { URLObserver } from '../url-observer.js';
 import { HOST } from './config.js';
 
-describe('usages-routes', () => {
+describe('usages-route-match', () => {
   /** Always load the page to reset URL history */
   beforeEach(async () => {
     await browser.url(HOST);
@@ -56,8 +56,8 @@ describe('usages-routes', () => {
 
     expect(expected).toStrictEqual<C>([
       {
-        found: false,
-        matches: { test: 123 },
+        found: true,
+        matches: { test: '123' },
         scope: '',
         status: 'click',
         url: `http://localhost:4000${newUrl}`,
@@ -103,7 +103,7 @@ describe('usages-routes', () => {
 
     expect(expected).toStrictEqual<C>([
       {
-        found: true,
+        found: false,
         matches: {},
         scope: '',
         status: 'click',
