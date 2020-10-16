@@ -5,13 +5,7 @@
     "outDir": "dist",
     "target": "ES2019",
     "declarationDir": "dist",
-    "types": [
-      "@wdio/mocha-framework",
-      "expect-webdriverio",
-      "node",
-      "webdriverio"
-    ]
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["dist", "node_modules"]
+  "exclude": ["dist", "node_modules", "**/test*/**"]
 }
