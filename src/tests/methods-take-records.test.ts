@@ -1,91 +1,69 @@
+import { assert } from '@esm-bundle/chai';
+
 import type { URLChangedStatus } from '../custom_typings.js';
-import type { URLObserver } from '../url-observer.js';
-import { HOST } from './config.js';
 import type { URLObserverWithDebug } from './custom_test_typings.js';
+import { initObserver } from './helpers/init-observer.js';
+import { TriggerEventListeners, triggerEvents, TriggerEventsEvents } from './helpers/trigger-event.js';
 
 describe('methods-take-records', () => {
-  /** Always load the page to reset URL history */
-  beforeEach(async () => {
-    await browser.url(HOST);
+  const observers: Set<URLObserverWithDebug> = new Set();
+  const init = initObserver(observers);
+
+  beforeEach(() => {
+    observers.forEach(n => n.disconnect());
+    observers.clear();
   });
 
-  afterEach(async () => {
-    await browser.executeAsync(async (done) => {
-      const obsList: URLObserver[] = window.observerList;
-
-      for (const obs of obsList) obs.disconnect();
-
-      done();
+  it(`always returns 'init' as the first record`, () => {
+    const routes: Record<'test', RegExp> = {
+      test: /^\/test$/i,
+    };
+    const observer = init({
+      routes: Object.values(routes),
     });
+
+    assert.deepStrictEqual<URLChangedStatus[]>(
+      observer.takeRecords().map(n => n.entryType),
+      ['init']
+    );
   });
 
-  it(`always returns 'init' as the first record`, async () => {
-    type A = URLChangedStatus[];
-
-    const expected: A = await browser.executeAsync(async (done) => {
-      const $w = window as unknown as Window;
-      const { initObserver } = $w.TestHelpers;
-      const routes: Record<'test', RegExp> = {
-        test: /^\/test$/i,
-      };
-
-      const observer = initObserver({
-        routes: Object.values(routes),
-        observerOption: { debug: true },
-      });
-
-      done((observer as URLObserverWithDebug).takeRecords().map(n => n.entryType));
+  it(`takes records`, async () => {
+    const listeners: TriggerEventListeners = {};
+    const routes: Record<'test', RegExp> = {
+      test: /^\/test$/i,
+    };
+    const observer = init({
+      routes: Object.values(routes),
     });
+    const run = triggerEvents(listeners);
 
-    expect(expected).toStrictEqual<A>(['init']);
+    await run('click');
+
+    assert.deepStrictEqual<URLChangedStatus[]>(
+      observer.takeRecords().map(n => n.entryType),
+      ['init', 'click']
+    );
   });
 
-  it(`returns records`, async () => {
-    type A = URLChangedStatus[];
-
-    const expected: A = await browser.executeAsync(async (done) => {
-      const $w = window as unknown as Window;
-      const { initObserver, triggerEvents } = $w.TestHelpers;
-      const routes: Record<'test', RegExp> = {
-        test: /^\/test$/i,
-      };
-
-      const observer = initObserver({
-        routes: Object.values(routes),
-        observerOption: { debug: true },
-      });
-
-      await triggerEvents('click');
-
-      done((observer as URLObserverWithDebug).takeRecords().map(n => n.entryType));
+  it(`deletes no records after it disconnects`, async () => {
+    const listeners: TriggerEventListeners = {};
+    const routes: Record<'test', RegExp> = {
+      test: /^\/test$/i,
+    };
+    const observer = init({
+      routes: Object.values(routes),
     });
+    const run = triggerEvents(listeners);
 
-    expect(expected).toStrictEqual<A>(['init', 'click']);
-  });
+    await run('click');
 
-  it(`returns no records after it disconnects`, async () => {
-    type A = URLChangedStatus[];
+    observer.disconnect();
 
-    const expected: A = await browser.executeAsync(async (done) => {
-      const $w = window as unknown as Window;
-      const { initObserver, triggerEvents } = $w.TestHelpers;
-      const routes: Record<'test', RegExp> = {
-        test: /^\/test$/i,
-      };
-
-      const observer = initObserver({
-        routes: Object.values(routes),
-        observerOption: { debug: true },
-      });
-
-      await triggerEvents('click');
-
-      observer.disconnect();
-
-      done((observer as URLObserverWithDebug).takeRecords().map(n => n.entryType));
-    });
-
-    expect(expected).toStrictEqual<A>([]);
+    assert.deepStrictEqual<URLChangedStatus[]>(
+      observer.takeRecords().map(n => n.entryType),
+      []
+    );
   });
 
 });

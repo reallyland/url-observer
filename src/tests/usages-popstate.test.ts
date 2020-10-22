@@ -1,152 +1,111 @@
+import { assert } from '@esm-bundle/chai';
+
 import { popStateEventKey } from '../constants.js';
 import type { URLChangedStatus } from '../custom_typings.js';
-import type { URLObserver } from '../url-observer.js';
-import { HOST } from './config.js';
-import { itSkip } from './webdriverio-test-helpers.js';
+import type { URLObserverWithDebug } from './custom_test_typings.js';
+import { appendLink } from './helpers/append-link.js';
+import { initObserver } from './helpers/init-observer.js';
+import { waitForEvent } from './helpers/wait-for-event.js';
+import { pageClick } from './wtr-helpers/page-click.js';
 
 describe('usages-popstate', () => {
-  /** Always load the page to reset URL history */
-  beforeEach(async () => {
-    await browser.url(HOST);
+  const observers: Set<URLObserverWithDebug> = new Set();
+  const init = initObserver(observers);
+  const routes: Record<'section' | 'test', RegExp> = {
+    section: /^\/test\/(?<test>[^\/]+)$/i,
+    test: /^\/test$/i,
+  };
+  const originalUrl = window.location.href;
+
+  beforeEach(() => {
+    observers.forEach(n => n.disconnect());
+    observers.clear();
+
+    window.history.replaceState({}, '', originalUrl);
   });
 
-  afterEach(async () => {
-    await browser.executeAsync(async (done) => {
-      const obsList: URLObserver[] = window.observerList;
+  // skip safari
+  it(`fires popstate event when triggered by hashchange`, async () => {
+    const newHash = '123';
 
-      for (const obs of obsList) obs.disconnect();
-
-      done();
+    const observer = init({
+      routes: Object.values(routes),
     });
+
+    await waitForEvent(popStateEventKey, () => {
+      window.location.hash = newHash;
+    });
+
+    assert.strictEqual(`${window.location.pathname}${window.location.hash}`, `/#${newHash}`);
+    assert.deepStrictEqual<URLChangedStatus[]>(
+      observer.takeRecords().map(n => n.entryType),
+      ['init', 'popstate']
+    );
   });
 
-  itSkip(['safari'])(`fires popstate event when triggered by hashchange`, async () => {
-    type A = Record<'test' | 'section', RegExp>;
-    type B = URLChangedStatus[];
-    type C = [string, B];
-
-    const newHash = '#123';
-    const expected: C = await browser.executeAsync(async (
-      a: string,
-      b: string,
-      done
-    ) => {
-      const $w = window as unknown as Window;
-      const { initObserver, waitForEvent } = $w.TestHelpers;
-      const routes: A = {
-        test: /^\/test$/i,
-        section: /^\/test\/(?<test>[^\/]+)$/i,
-      };
-
-      const observer = initObserver({ routes: Object.values(routes) });
-
-      await waitForEvent(b, () => {
-        $w.location.hash = a;
-      });
-
-      const { pathname, hash } = $w.location;
-
-      done([
-        [pathname, hash].join(''),
-        observer.takeRecords().map(n => n.entryType),
-      ]);
-    }, newHash, popStateEventKey);
-
-    expect(expected).toStrictEqual<C>([
-      '/test.html#123',
-      ['init', 'popstate'],
-    ]);
-  });
-
-  itSkip([
-    'firefox',
-    'safari',
-  ])(`fires popstate event when triggered by history.back()`, async () => {
-    type A = Record<'test' | 'section', RegExp>;
-    type B = URLChangedStatus[];
-    type C = [string, B];
-
+  // skip firefox, safari
+  it(`fires popstate event when triggered by history.back()`, async () => {
     const newUrl = '/test/123';
-    const expected: C = await browser.executeAsync(async (
-      a: string,
-      b: string,
-      done
-    ) => {
-      const $w = window as unknown as Window;
-      const { appendLink, initObserver, waitForEvent } = $w.TestHelpers;
-      const routes: A = {
-        test: /^\/test$/i,
-        section: /^\/test\/(?<test>[^\/]+)$/i,
-      };
 
-      const observer = initObserver({ routes: Object.values(routes) });
-      const { link, removeLink } = appendLink(a);
+    const { removeLink } = appendLink(newUrl);
+    const observer = init({
+      routes: Object.values(routes),
+    });
 
-      await waitForEvent('click', () => link.click());
-      await waitForEvent(b, () => $w.history.back());
+    await waitForEvent('click', async () => {
+      await pageClick(`a[href="${newUrl}"]`, {
+        button: 'left',
+      });
+    });
 
-      removeLink();
+    await waitForEvent(popStateEventKey, () => {
+      window.history.back();
+    });
 
-      done([
-        $w.location.pathname,
-        observer.takeRecords().map(n => n.entryType),
-      ]);
-    }, newUrl, popStateEventKey);
+    removeLink();
 
-    expect(expected).toStrictEqual<C>([
-      '/test.html',
-      ['init', 'click', 'popstate'],
-    ]);
+    assert.strictEqual(window.location.pathname, '/');
+    assert.deepStrictEqual<URLChangedStatus[]>(
+      observer.takeRecords().map(n => n.entryType),
+      ['init', 'click', 'popstate']
+    );
   });
 
   it(`fires popstate event when triggered by history.forward()`, async () => {
-    type A = Record<'test' | 'section', RegExp>;
-    type B = URLChangedStatus[];
-    type C = [string, B];
-
     const newUrls = ['/test/456', '/test/789'];
-    const expected: C = await browser.executeAsync(async (
-      a: string[],
-      b: string,
-      done
-    ) => {
-      const $w = window as unknown as Window;
-      const { appendLink, initObserver, waitForEvent } = $w.TestHelpers;
-      const routes: A = {
-        test: /^\/test$/i,
-        section: /^\/test\/(?<test>[^\/]+)$/i,
-      };
 
-      const observer = initObserver({
-        routes: Object.values(routes),
-        observerOption: { dwellTime: -1 },
+    const observer = init({
+      routes: Object.values(routes),
+      observerOption: {
+        dwellTime: -1,
+      },
+    });
+
+    for (const newUrl of newUrls) {
+      const { removeLink } = appendLink(newUrl);
+
+      await waitForEvent('click', async () => {
+        await pageClick(`a[href="${newUrl}"]`, {
+          button: 'left',
+        });
       });
 
-      for (const na of a) {
-        const { link, removeLink } = appendLink(na);
+      removeLink();
+    }
 
-        await waitForEvent('click', () => link.click());
-        removeLink();
-      }
+    await waitForEvent(popStateEventKey, () => {
+      window.history.back();
+    });
 
-      await waitForEvent(b, () => {
-        $w.history.back();
-      });
+    await waitForEvent(popStateEventKey, () => {
+      window.history.forward();
+    });
 
-      await waitForEvent(b, () => {
-        $w.history.forward();
-      });
-
-      done([
-        $w.location.pathname,
-        observer.takeRecords().map(n => n.entryType),
-      ]);
-    }, newUrls, popStateEventKey);
-
-    expect(expected).toStrictEqual<C>([
-      '/test/789',
-      ['init', 'click', 'click', 'popstate', 'popstate'],
-    ]);
+    assert.strictEqual(window.location.pathname, '/test/789');
+    assert.deepStrictEqual<URLChangedStatus[]>(
+      observer.takeRecords().map(n => n.entryType),
+      ['init', 'click', 'click', 'popstate', 'popstate']
+    );
   });
 
 });

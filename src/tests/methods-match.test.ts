@@ -1,88 +1,52 @@
+import { assert } from '@esm-bundle/chai';
 import { pushStateEventKey } from '../constants.js';
-import type { MatchedRoute } from '../custom_typings.js';
-import type { URLObserver } from '../url-observer.js';
-import { HOST } from './config.js';
-import { itSkip } from './webdriverio-test-helpers.js';
+
+import type { URLObserverWithDebug } from './custom_test_typings.js';
+import { appendLink } from './helpers/append-link.js';
+import { initObserver } from './helpers/init-observer.js';
+import { waitForEvent } from './helpers/wait-for-event.js';
 
 describe('methods-match', () => {
-  /** Always load the page to reset URL history */
-  beforeEach(async () => {
-    await browser.url(HOST);
+  const observers: Set<URLObserverWithDebug> = new Set();
+  const init = initObserver(observers);
+
+  beforeEach(() => {
+    observers.forEach(n => n.disconnect());
+    observers.clear();
   });
 
-  afterEach(async () => {
-    await browser.executeAsync(async (done) => {
-      const obsList: URLObserver[] = window.observerList;
-
-      for (const obs of obsList) obs.disconnect();
-
-      done();
+  // skip microsoftedge
+  it(`finds a matched route`, async () => {
+    const observer = init({
+      routes: [/^\/test\/(?<test>[^\/]+)/i],
     });
-  });
+    const { link, removeLink } = appendLink('/test/123');
 
-  itSkip(['microsoftedge'])(`finds a matched route`, async () => {
-    interface A {
-      test: string;
-    }
-    type B = MatchedRoute<A>;
+    await waitForEvent(pushStateEventKey, () => {
+      link.click();
+    });
 
-    const expected: B = await browser.executeAsync(async (
-      a: string,
-      done
-    ) => {
-      const $w = window as unknown as Window;
-      const { appendLink, initObserver, waitForEvent } = $w.TestHelpers;
+    removeLink();
 
-      const observer = initObserver({
-        routes: [/^\/test\/(?<test>[^\/]+)/i],
-        observerOption: { debug: true },
-      });
-      const { link, removeLink } = appendLink('/test/123');
-
-      await waitForEvent(a, () => {
-        link.click();
-      });
-
-      removeLink();
-
-      done(observer.match<B>());
-    }, pushStateEventKey);
-
-    expect(expected).toEqual<B>({
+    assert.deepStrictEqual(observer.match(), {
       found: true,
       matches: { test: '123' },
     });
   });
 
   it(`finds no matched route`, async () => {
-    interface A {
-      test?: string;
-    }
-    type B = MatchedRoute<A>;
+    const observer = init({
+      routes: [/^\/test$/i],
+    });
+    const { link, removeLink } = appendLink('/test/123');
 
-    const expected: B = await browser.executeAsync(async (
-      a: string,
-      done
-    ) => {
-      const $w = window as unknown as Window;
-      const { appendLink, initObserver, waitForEvent } = $w.TestHelpers;
+    await waitForEvent(pushStateEventKey, () => {
+      link.click();
+    });
 
-      const observer = initObserver({
-        routes: [/^\/test$/i],
-        observerOption: { debug: true },
-      });
-      const { link, removeLink } = appendLink('/test/123');
+    removeLink();
 
-      await waitForEvent(a, () => {
-        link.click();
-      });
-
-      removeLink();
-
-      done(observer.match<B>());
-    }, pushStateEventKey);
-
-    expect(expected).toEqual<B>({
+    assert.deepStrictEqual(observer.match(), {
       found: false,
       matches: {},
     });

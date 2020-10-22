@@ -1,788 +1,546 @@
+import { assert } from '@esm-bundle/chai';
 import { pushStateEventKey } from '../constants.js';
-import type { RouteEvent, URLChangedStatus } from '../custom_typings.js';
-import type { URLObserver } from '../url-observer.js';
-import { HOST } from './config.js';
-import { itSkip } from './webdriverio-test-helpers.js';
+import type { URLChangedStatus } from '../custom_typings.js';
+
+import type { URLObserverWithDebug } from './custom_test_typings.js';
+import { appendElement } from './helpers/append-element.js';
+import { appendLink } from './helpers/append-link.js';
+import { appendShadowElement } from './helpers/append-shadow-element.js';
+import { initObserver } from './helpers/init-observer.js';
+import { waitForEvent } from './helpers/wait-for-event.js';
+import { frameClick } from './wtr-helpers/frame-click.js';
+import { pageClick } from './wtr-helpers/page-click.js';
 
 describe('usages-click', () => {
-  /** Always load the page to reset URL history */
-  beforeEach(async () => {
-    await browser.url(HOST);
+  const observers: Set<URLObserverWithDebug> = new Set();
+  const init = initObserver(observers);
+  const routes: Record<'section' | 'test', RegExp> = {
+    section: /^\/test\/(?<test>[^\/]+)$/i,
+    test: /^\/test$/i,
+  };
+
+  beforeEach(() => {
+    observers.forEach(n => n.disconnect());
+    observers.clear();
+
+    /** Replace current URL to root path after each test */
+    window.history.replaceState({}, '', '/');
   });
 
-  afterEach(async () => {
-    await browser.executeAsync(async (done) => {
-      const obsList: URLObserver[] = window.observerList;
-
-      for (const obs of obsList) obs.disconnect();
-
-      /** Reset .UsagesClick if exists */
-      if ((window as any).UsagesClick) {
-        (window as any).UsagesClick = undefined;
-      }
-
-      done();
-    });
-  });
-
-  context('does not intercept click when ', () => {
-    it(`'<click>.defaultPrevented=true'`, async () => {
-      type A = Record<'test' | 'section', RegExp>;
-      type B = (null | URLChangedStatus)[];
-      type C = [string, B, B];
-
-      const newUrl = '/test/123';
-      const expected: C = await browser.executeAsync(async (
-        a: string,
-        b: string,
-        done
-      ) => {
-        const $w = window as unknown as Window;
-        const { appendLink, initObserver, waitForEvent } = $w.TestHelpers;
-        const routes: A = {
-          test: /^\/test$/i,
-          section: /^\/test\/(?<test>[^\/]+)$/i,
-        };
-
-        const observer = initObserver({
-          routes: Object.values(routes),
-          observerOption: { debug: true },
-        });
-
-        const { link, removeLink } = appendLink(a);
-        const result: B = [];
-
-        link.addEventListener('click', (ev: MouseEvent) => {
-          ev.preventDefault();
-          result.push(null);
-        });
-
-        if (
-          await waitForEvent<CustomEvent<RouteEvent>>(b, () => {
-            link.click();
-          })
-        ) result.push('click');
-
-        removeLink();
-
-        done([
-          $w.location.pathname,
-          result,
-          observer.takeRecords().map(n => n.entryType),
-        ]);
-      }, newUrl, pushStateEventKey);
-
-      expect(expected).toStrictEqual<C>(['/test.html', [null], ['init']]);
-    });
-
-    itSkip(['firefox', 'microsoftedge', 'safari'])(`'<click>.metaKey=true'`, async () => {
-      type A = Record<'test' | 'section', RegExp>;
-      type B = (null | URLChangedStatus)[];
-      interface C {
-        button: number;
-        metaKey: boolean;
-      }
-      type D = [string, C, B];
-
-      const newUrl = '/test/123';
-      await browser.executeAsync(async (
-        a: string,
-        b: string,
-        done
-      ) => {
-        const $w = window as unknown as Window;
-        const { appendLink, initObserver } = $w.TestHelpers;
-        const routes: A = {
-          test: /^\/test$/i,
-          section: /^\/test\/(?<test>[^\/]+)$/i,
-        };
-
-        const observer = initObserver({
-          routes: Object.values(routes),
-          observerOption: { debug: true },
-        });
-        const { removeLink } = appendLink(a);
-
-        ($w as any).UsagesClick = { observer, button: -1, metaKey: false };
-
-        $w.addEventListener('click', (ev: MouseEvent) => {
-          ev.preventDefault();
-
-          ($w as any).UsagesClick.button = ev?.button;
-          ($w as any).UsagesClick.metaKey = ev.metaKey;
-          removeLink();
-        });
-
-        $w.addEventListener(b, () => {
-          ($w as any).UsagesClick.button = -2;
-          removeLink();
-        });
-
-        done();
-      }, newUrl, pushStateEventKey);
-
-      await Promise.all([
-        browser.keys(['Meta']),
-        (await $(`[href="${newUrl}"]`)).click({ button: 'left' }),
-      ]);
-
-      await browser.keys(['Meta']);
-
-      const expected: D = await browser.executeAsync(async (done) => {
-        const $w = window as unknown as Window;
-
-        const result: D = [
-          $w.location.pathname,
-          {
-            button: ($w as any).UsagesClick.button,
-            metaKey: ($w as any).UsagesClick.metaKey,
-          },
-          (($w as any).UsagesClick.observer as URLObserver).takeRecords().map(n => n.entryType),
-        ];
-
-        done(result);
-      });
-
-      expect(expected).toStrictEqual<D>(['/test.html', { button: 0, metaKey: true }, ['init']]);
-    });
-
-    itSkip(['firefox', 'microsoftedge', 'safari'])(`'<click>.ctrlKey=true'`, async () => {
-      type A = Record<'test' | 'section', RegExp>;
-      type B = (null | URLChangedStatus)[];
-      interface C {
-        button: number;
-        ctrlKey: boolean;
-      }
-      type D = [string, C, B];
-
-      const newUrl = '/test/123';
-      await browser.executeAsync(async (
-        a: string,
-        b: string,
-        done
-      ) => {
-        const $w = window as unknown as Window;
-        const { appendLink, initObserver } = $w.TestHelpers;
-        const routes: A = {
-          test: /^\/test$/i,
-          section: /^\/test\/(?<test>[^\/]+)$/i,
-        };
-
-        const observer = initObserver({
-          routes: Object.values(routes),
-          observerOption: { debug: true },
-        });
-        const { removeLink } = appendLink(a);
-
-        ($w as any).UsagesClick = { observer, button: -1, ctrlKey: false };
-
-        $w.addEventListener('click', (ev: MouseEvent) => {
-          ev.preventDefault();
-
-          ($w as any).UsagesClick.button = ev.button;
-          ($w as any).UsagesClick.ctrlKey = ev.ctrlKey;
-          removeLink();
-        });
-        $w.addEventListener(b, () => {
-          ($w as any).UsagesClick.button = -2;
-          removeLink();
-        });
-
-        done();
-      }, newUrl, pushStateEventKey);
-
-      await Promise.all([
-        browser.keys(['Control']),
-        (await $(`a[href="${newUrl}"]`)).click({ button: 'left' }),
-      ]);
-
-      await browser.keys(['Control']);
-
-      const expected: D = await browser.executeAsync(async (done) => {
-        const $w = window as unknown as Window;
-
-        const result: D = [
-          $w.location.pathname,
-          {
-            button: ($w as any).UsagesClick.button,
-            ctrlKey: ($w as any).UsagesClick.ctrlKey,
-          },
-          (($w as any).UsagesClick.observer as URLObserver).takeRecords().map(n => n.entryType),
-        ];
-
-        done(result);
-      });
-
-      expect(expected).toStrictEqual<D>(['/test.html', { button: 0, ctrlKey: true }, ['init']]);
-    });
-
-    itSkip(['firefox', 'microsoftedge', 'safari'])(`'<click>.shiftKey=true'`, async () => {
-      type A = Record<'test' | 'section', RegExp>;
-      type B = (null | URLChangedStatus)[];
-      interface C {
-        button: number;
-        shiftKey: boolean;
-      }
-      type D = [string, C, B];
-
-      const newUrl = '/test/123';
-      await browser.executeAsync(async (
-        a: string,
-        b: string,
-        done
-      ) => {
-        const $w = window as unknown as Window;
-        const { appendLink, initObserver } = $w.TestHelpers;
-        const routes: A = {
-          test: /^\/test$/i,
-          section: /^\/test\/(?<test>[^\/]+)$/i,
-        };
-
-        const observer = initObserver({
-          routes: Object.values(routes),
-          observerOption: { debug: true },
-        });
-        const { removeLink } = appendLink(a);
-
-        ($w as any).UsagesClick = { observer, button: -1, shiftKey: false };
-
-        $w.addEventListener('click', (ev: MouseEvent) => {
-          ev.preventDefault();
-
-          ($w as any).UsagesClick.button = ev.button;
-          ($w as any).UsagesClick.shiftKey = ev.shiftKey;
-          removeLink();
-        });
-        $w.addEventListener(b, () => {
-          ($w as any).UsagesClick.button = -2;
-          removeLink();
-        });
-
-        done();
-      }, newUrl, pushStateEventKey);
-
-      await Promise.all([
-        browser.keys(['Shift']),
-        (await $(`[href="${newUrl}"]`)).click({ button: 'left' }),
-      ]);
-
-      await browser.keys(['Shift']);
-
-      const expected: D = await browser.executeAsync(async (done) => {
-        const $w = window as unknown as Window;
-
-        const result: D = [
-          $w.location.pathname,
-          {
-            button: ($w as any).UsagesClick.button,
-            shiftKey: ($w as any).UsagesClick.shiftKey,
-          },
-          (($w as any).UsagesClick.observer as URLObserver).takeRecords().map(n => n.entryType),
-        ];
-
-        done(result);
-      });
-
-      expect(expected).toStrictEqual<D>(['/test.html', { button: 0, shiftKey: true }, ['init']]);
-    });
-
-    it(`<click>.target is not an anchor element`, async () => {
-      type A = Record<'test' | 'section', RegExp>;
-      type B = (null | URLChangedStatus)[];
-      interface C {
-        button: number;
-      }
-      type D = [string, C, B];
-
-      const newElement = 'button';
-      const newUrl = '/test/123';
-      await browser.executeAsync(async (
-        a: string,
-        b: string,
-        c: string,
-        done
-      ) => {
-        const $w = window as unknown as Window;
-        const { appendElement, initObserver } = $w.TestHelpers;
-        const routes: A = {
-          test: /^\/test$/i,
-          section: /^\/test\/(?<test>[^\/]+)$/i,
-        };
-
-        const observer = initObserver({
-          routes: Object.values(routes),
-          observerOption: { debug: true },
-        });
-        const { removeElement } = appendElement<HTMLButtonElement>(a, { id: b, textContent: b });
-
-        ($w as any).UsagesClick = { observer, button: -1 };
-
-        $w.addEventListener('click', (ev: MouseEvent) => {
-          ($w as any).UsagesClick.button = ev.button;
-          removeElement();
-        });
-        $w.addEventListener(c, () => {
-          ($w as any).UsagesClick.button = -2;
-          removeElement();
-        });
-
-        done();
-      }, newElement, newUrl, pushStateEventKey);
-
-      await (await $(`button[id="${newUrl}"]`)).click({ button: 'left' });
-
-      const expected: D = await browser.executeAsync(async (done) => {
-        const $w = window as unknown as Window;
-
-        const result: D = [
-          $w.location.pathname,
-          { button: ($w as any).UsagesClick.button },
-          (($w as any).UsagesClick.observer as URLObserver).takeRecords().map(n => n.entryType),
-        ];
-
-        done(result);
-      });
-
-      expect(expected).toStrictEqual<D>(['/test.html', { button: 0 }, ['init']]);
-    });
-
-    itSkip(['microsoftedge'])(`<click>.<#shadowTarget> is not an anchor element`, async () => {
-      type A = Record<'test' | 'section', RegExp>;
-      type B = (null | URLChangedStatus)[];
-      interface C {
-        button: number;
-      }
-      type D = [string, C, B];
-
-      const newElement = 'button';
-      const newUrl = '/test/123';
-      const componentName: string = await browser.executeAsync(async (
-        a: string,
-        b: string,
-        c: string,
-        done
-      ) => {
-        const $w = window as unknown as Window;
-        const { appendShadowElement, initObserver } = $w.TestHelpers;
-        const routes: A = {
-          test: /^\/test$/i,
-          section: /^\/test\/(?<test>[^\/]+)$/i,
-        };
-
-        const observer = initObserver({
-          routes: Object.values(routes),
-          observerOption: { debug: true },
-        });
-        const {
-          component,
-          removeElement,
-        } = appendShadowElement<HTMLButtonElement>(a, { id: b, '.textContent': b });
-
-        ($w as any).UsagesClick = { observer, button: -1 };
-
-        $w.addEventListener('click', (ev: MouseEvent) => {
-          ($w as any).UsagesClick.button = ev.button;
-          removeElement();
-        });
-        $w.addEventListener(c, () => {
-          ($w as any).UsagesClick.button = -2;
-          removeElement();
-        });
-
-        done(component.localName);
-      }, newElement, newUrl, pushStateEventKey);
-
-      await (
-        await (await $(componentName)).shadow$(`button[id="${newUrl}"]`)
-      ).click({ button: 'left' });
-
-      const expected: D = await browser.executeAsync(async (done) => {
-        const $w = window as unknown as Window;
-        const result: D = [
-          $w.location.pathname,
-          { button: ($w as any).UsagesClick.button },
-          (($w as any).UsagesClick.observer as URLObserver).takeRecords().map(n => n.entryType),
-        ];
-
-        done(result);
-      });
-
-      expect(expected).toStrictEqual<D>(['/test.html', { button: 0 }, ['init']]);
-    });
-
-    it(`<click>.target is a download link`, async () => {
-      type A = Record<'test' | 'section', RegExp>;
-      type B = (null | URLChangedStatus)[];
-      interface C {
-        button: number;
-      }
-      type D = [string, C, B];
-
-      const newUrl = '/test/123';
-
-      await browser.executeAsync(async (
-        a: string,
-        b: string,
-        done
-      ) => {
-        const $w = window as unknown as Window;
-        const { appendLink, initObserver } = $w.TestHelpers;
-        const routes: A = {
-          test: /^\/test$/i,
-          section: /^\/test\/(?<test>[^\/]+)$/i,
-        };
-
-        const observer = initObserver({
-          routes: Object.values(routes),
-          observerOption: { debug: true },
-        });
-        const { removeLink } = appendLink(a, { download: '' });
-
-        ($w as any).UsagesClick = { observer, button: -1 };
-
-        $w.addEventListener('click', (ev: MouseEvent) => {
-          ev.preventDefault();
-
-          ($w as any).UsagesClick.button = ev.button;
-          removeLink();
-        });
-        $w.addEventListener(b, () => {
-          ($w as any).UsagesClick.button = -2;
-          removeLink();
-        });
-
-        done();
-      }, newUrl, pushStateEventKey);
-
-      await (await $(`a[href="${newUrl}"]`)).click({ button: 'left' });
-
-      const expected: D = await browser.executeAsync(async (done) => {
-        const $w = window as unknown as Window;
-        const result: D = [
-          $w.location.pathname,
-          { button: ($w as any).UsagesClick.button },
-          (($w as any).UsagesClick.observer as URLObserver).takeRecords().map(n => n.entryType),
-        ];
-
-        done(result);
-      });
-
-      expect(expected).toStrictEqual<D>(['/test.html', { button: 0 }, ['init']]);
-    });
-
-    it(`<click>.target opens link in a new window or tab`, async () => {
-      type A = Record<'test' | 'section', RegExp>;
-      type B = (null | URLChangedStatus)[];
-      interface C {
-        button: number;
-      }
-      type D = [string, C, B];
-
-      const newUrl = '/test/123';
-      await browser.executeAsync(async (
-        a: string,
-        b: string,
-        done
-      ) => {
-        const $w = window as unknown as Window;
-        const { appendLink, initObserver } = $w.TestHelpers;
-        const routes: A = {
-          test: /^\/test$/i,
-          section: /^\/test\/(?<test>[^\/]+)$/i,
-        };
-
-        const observer = initObserver({
-          routes: Object.values(routes),
-          observerOption: { debug: true },
-        });
-        const { removeLink } = appendLink(a, { target: '_blank' });
-
-        ($w as any).UsagesClick = { observer, button: -1 };
-
-        $w.addEventListener('click', (ev: MouseEvent) => {
-          ev.preventDefault();
-
-          ($w as any).UsagesClick.button = ev.button;
-          removeLink();
-        });
-        $w.addEventListener(b, () => {
-          ($w as any).UsagesClick.button = -2;
-          removeLink();
-        });
-
-        done();
-      }, newUrl, pushStateEventKey);
-
-      await (await $(`a[href="${newUrl}"]`)).click({ button: 'left' });
-
-      const expected: D = await browser.executeAsync(async (done) => {
-        const $w = window as unknown as Window;
-
-        const result: D = [
-          $w.location.pathname,
-          { button: ($w as any).UsagesClick.button },
-          (($w as any).UsagesClick.observer as URLObserver).takeRecords().map(n => n.entryType),
-        ];
-
-        done(result);
-      });
-
-      expect(expected).toStrictEqual<D>(['/test.html', { button: 0 }, ['init']]);
-    });
-
-    it(`<click>.target is inside an iframe`, async () => {
-      type A = Record<'test' | 'section', RegExp>;
-      type B = (null | URLChangedStatus)[];
-      type C = [string[], number[], B];
-
-      const newUrl = '/test/123';
-      const expected: C = await browser.executeAsync(async (
-        a: string,
-        b: string,
-        done
-      ) => {
-        const $w = window as unknown as Window;
-        const { initObserver } = $w.TestHelpers;
-        const routes: A = {
-          test: /^\/test$/i,
-          section: /^\/test\/(?<test>[^\/]+)$/i,
-        };
-
-        const observer = initObserver({
-          routes: Object.values(routes),
-          observerOption: { debug: true },
-        });
-
-        ($w as any).UsagesClick = { observer, button: [], pathname: [] };
-
-        for (const linkTarget of ['_parent', '_top']) {
-          const frame = document.createElement('iframe');
-          const link = document.createElement('a');
-
-          link.href = link.textContent = a;
-          link.setAttribute('target', linkTarget);
-
-          document.body.appendChild(frame);
-          frame.contentDocument?.body.appendChild(link);
-
-          const linkClicked = new Promise((y) => {
-            frame.contentWindow?.addEventListener('click', (ev: MouseEvent) => {
-              ev.preventDefault();
-
-              ($w as any).UsagesClick.button.push(ev.button);
-              document.body.removeChild(frame);
-              y();
-            });
-
-            $w.addEventListener(b, () => {
-              ($w as any).UsagesClick.button.push(-2);
-              document.body.removeChild(frame);
-              y();
-            });
-          });
-
-          link.click();
-          await linkClicked;
-
-          ($w as any).UsagesClick.pathname.push($w.location.pathname);
-        }
-
-        const result: C = [
-          ($w as any).UsagesClick.pathname,
-          ($w as any).UsagesClick.button,
-          (($w as any).UsagesClick.observer as URLObserver).takeRecords().map(n => n.entryType),
-        ];
-
-        done(result);
-      }, newUrl, pushStateEventKey);
-
-      expect(expected).toStrictEqual<C>([
-        ['/test.html', '/test.html'],
-        [0, 0],
-        ['init'],
-      ]);
-    });
-
-    it(`<click>.target opens cross-origin link`, async () => {
-      type A = Record<'test' | 'section', RegExp>;
-      type B = (null | URLChangedStatus)[];
-      interface C {
-        button: number;
-      }
-      type D = [string, C, B];
-
-      const newUrl = 'https://example.com/test/123';
-
-      await browser.executeAsync(async (
-        a: string,
-        b: string,
-        done
-      ) => {
-        const $w = window as unknown as Window;
-        const { appendLink, initObserver } = $w.TestHelpers;
-        const routes: A = {
-          test: /^\/test$/i,
-          section: /^\/test\/(?<test>[^\/]+)$/i,
-        };
-
-        const observer = initObserver({
-          routes: Object.values(routes),
-          observerOption: { debug: true },
-        });
-        const { removeLink } = appendLink(a);
-
-        ($w as any).UsagesClick = { observer, button: -1 };
-
-        $w.addEventListener('click', (ev: MouseEvent) => {
-          ev.preventDefault();
-
-          ($w as any).UsagesClick.button = ev.button;
-          removeLink();
-        });
-        $w.addEventListener(b, () => {
-          ($w as any).UsagesClick.button = -2;
-          removeLink();
-        });
-
-        done();
-      }, newUrl, pushStateEventKey);
-
-      await (await $(`a[href="${newUrl}"]`)).click({ button: 'left' });
-
-      const expected: D = await browser.executeAsync(async (done) => {
-        const $w = window as unknown as Window;
-        const result: D = [
-          $w.location.pathname,
-          { button: ($w as any).UsagesClick.button },
-          (($w as any).UsagesClick.observer as URLObserver).takeRecords().map(n => n.entryType),
-        ];
-
-        done(result);
-      });
-
-      expect(expected).toStrictEqual<D>(['/test.html', { button: 0 }, ['init']]);
-    });
-
-  });
-
-  it(`does not update URL when new URL is the same as the existing one`, async () => {
-    type A = Record<'test' | 'section', RegExp>;
-    type B = URLChangedStatus[];
-
+  it(`does not intercept click when <click>.defaultPrevented=true`, async () => {
     const newUrl = '/test/123';
-    const expected: B = await browser.executeAsync(async(
-      a: string,
-      done
-    ) => {
-      const $w = window as unknown as Window;
-      const { appendLink, initObserver, waitForEvent } = $w.TestHelpers;
-      const routes: A = {
-        test: /^\/test$/i,
-        section: /^\/test\/(?<test>[^\/]+)$/i,
-      };
 
-      const observer = initObserver({ routes: Object.values(routes) });
-      const { link, removeLink } = appendLink(a);
+    const { link, removeLink } = appendLink(newUrl);
+    const observer = init({
+      routes: Object.values(routes),
+    });
+    const result: (URLChangedStatus | null)[] = [];
 
-      await waitForEvent('click', async () => {
-        await observer.updateHistory(a);
-        link.click();
-      });
+    link.addEventListener('click', (ev: MouseEvent) => {
+      ev.preventDefault();
+      result.push(null);
+    });
 
-      removeLink();
+    if (await waitForEvent(pushStateEventKey, () => link.click())) {
+      result.push('click');
+    }
 
-      done(observer.takeRecords().map(n => n.entryType));
-    }, newUrl);
+    removeLink();
 
-    expect(expected).toEqual<B>(['init', 'manual']);
+    assert.strictEqual(window.location.pathname, '/');
+    assert.deepStrictEqual(result, [null]);
+    assert.deepStrictEqual<URLChangedStatus[]>(
+      observer.takeRecords().map(n => n.entryType),
+      ['init']
+    );
   });
 
-  it(`updates URL with default before route handler`, async () => {
-    type A = Record<'test' | 'section', RegExp>;
-    type B = Record<string, string>;
-    type C = [string, B];
-    type D = [B[], URLChangedStatus[]];
+  // skip firefox, microsoftedge, safari
+  it(`does not intercept click when <click>.metaKey=true`, async () => {
+    const newUrl = '/test/123';
 
-    const anchorOptions: C[] = [
+    const { removeLink } = appendLink(newUrl);
+    const observer = init({
+      routes: Object.values(routes),
+    });
+    let eventButton = -1;
+    let metaKey = false;
+
+    window.addEventListener('click', (ev: MouseEvent) => {
+      ev.preventDefault();
+
+      eventButton = ev.button;
+      metaKey = ev.metaKey;
+      removeLink();
+    });
+
+    window.addEventListener(pushStateEventKey, () => {
+      eventButton = -2;
+      removeLink();
+    });
+
+    await pageClick(`a[href="${newUrl}"]`, {
+      button: 'left',
+      modifiers: ['Meta'],
+    });
+
+    assert.strictEqual(window.location.pathname, '/');
+    assert.strictEqual(eventButton, 0);
+    assert.strictEqual(metaKey, true);
+    assert.deepStrictEqual<URLChangedStatus[]>(
+      observer.takeRecords().map(n => n.entryType),
+      ['init']
+    );
+  });
+
+  // skip firefox, microsoftedge, safari
+  it(`does not intercept click when <click>.ctrlKey=true`, async () => {
+    const newUrl = '/test/123';
+
+    const { removeLink } = appendLink(newUrl);
+    const observer = init({
+      routes: Object.values(routes),
+    });
+    let eventButton = -1;
+    let ctrlKey = false;
+
+    window.addEventListener('click', (ev: MouseEvent) => {
+      ev.preventDefault();
+
+      eventButton = ev.button;
+      ctrlKey = ev.ctrlKey;
+      removeLink();
+    });
+
+    window.addEventListener(pushStateEventKey, () => {
+      eventButton = -2;
+      removeLink();
+    });
+
+    await pageClick(`a[href="${newUrl}"]`, {
+      button: 'left',
+      modifiers: ['Control'],
+    });
+
+    assert.strictEqual(window.location.pathname, '/');
+    assert.strictEqual(eventButton, 0);
+    assert.strictEqual(ctrlKey, true);
+    assert.deepStrictEqual<URLChangedStatus[]>(
+      observer.takeRecords().map(n => n.entryType),
+      ['init']
+    );
+  });
+
+  // skip firefox, microsoftedge, safari
+  it(`does not intercept click when <click>.shiftKey=true`, async () => {
+    const newUrl = '/test/123';
+
+    const { removeLink } = appendLink(newUrl);
+    const observer = init({
+      routes: Object.values(routes),
+    });
+    let eventButton = -1;
+    let shiftKey = false;
+
+    window.addEventListener('click', (ev: MouseEvent) => {
+      ev.preventDefault();
+
+      eventButton = ev.button;
+      shiftKey = ev.shiftKey;
+      removeLink();
+    });
+
+    window.addEventListener(pushStateEventKey, () => {
+      eventButton = -2;
+      removeLink();
+    });
+
+    await pageClick(`a[href="${newUrl}"]`, {
+      button: 'left',
+      modifiers: ['Shift'],
+    });
+
+    assert.strictEqual(window.location.pathname, '/');
+    assert.strictEqual(eventButton, 0);
+    assert.strictEqual(shiftKey, true);
+    assert.deepStrictEqual<URLChangedStatus[]>(
+      observer.takeRecords().map(n => n.entryType),
+      ['init']
+    );
+  });
+
+  it(`does not intercept click when <click>.target is not an anchor element`, async () => {
+    const newElement = 'button';
+    const newUrl = '/test/123';
+
+    const { removeElement } = appendElement(newElement, {
+      id: newUrl,
+      '.textContent': newUrl,
+    });
+    const observer = init({
+      routes: Object.values(routes),
+    });
+    let eventButton = -1;
+
+    window.addEventListener('click', (ev: MouseEvent) => {
+      ev.preventDefault();
+
+      eventButton = ev.button;
+      removeElement();
+    });
+
+    window.addEventListener(pushStateEventKey, () => {
+      eventButton = -2;
+      removeElement();
+    });
+
+    await pageClick(`button[id="${newUrl}"]`, {
+      button: 'left',
+    });
+
+    assert.strictEqual(window.location.pathname, '/');
+    assert.strictEqual(eventButton, 0);
+    assert.deepStrictEqual<URLChangedStatus[]>(
+      observer.takeRecords().map(n => n.entryType),
+      ['init']
+    );
+  });
+
+  // skip microsoftedge
+  it(`does not intercept click when <click>.<#shadowTarget> is not an anchor element`, async () => {
+    const newElement = 'button';
+    const newUrl = '/test/123';
+
+    const { component, removeElement } = appendShadowElement(newElement, {
+      id: newUrl,
+      '.textContent': newUrl,
+    });
+    const observer = init({
+      routes: Object.values(routes),
+    });
+    let eventButton = -1;
+
+    window.addEventListener('click', (ev: MouseEvent) => {
+      ev.preventDefault();
+
+      eventButton = ev.button;
+      removeElement();
+    });
+
+    window.addEventListener(pushStateEventKey, () => {
+      eventButton = -2;
+      removeElement();
+    });
+
+    await pageClick(`${component.localName} button[id="${newUrl}"]`, {
+      button: 'left',
+    });
+
+    assert.strictEqual(window.location.pathname, '/');
+    assert.strictEqual(eventButton, 0);
+    assert.deepStrictEqual<URLChangedStatus[]>(
+      observer.takeRecords().map(n => n.entryType),
+      ['init']
+    );
+  });
+
+  it(`does not intercept click when <click>.target is a download link`, async () => {
+    const newUrl = '/test/123';
+
+    const { removeLink } = appendLink(newUrl, {
+      download: '',
+    });
+    const observer = init({
+      routes: Object.values(routes),
+    });
+    let eventButton = -1;
+
+    window.addEventListener('click', (ev: MouseEvent) => {
+      ev.preventDefault();
+
+      eventButton = ev.button;
+      removeLink();
+    });
+
+    window.addEventListener(pushStateEventKey, () => {
+      eventButton = -2;
+      removeLink();
+    });
+
+    await pageClick(`a[href="${newUrl}"]`, {
+      button: 'left',
+    });
+
+    assert.strictEqual(window.location.pathname, '/');
+    assert.strictEqual(eventButton, 0);
+    assert.deepStrictEqual<URLChangedStatus[]>(
+      observer.takeRecords().map(n => n.entryType),
+      ['init']
+    );
+  });
+
+  it(
+    `does not intercept click when <click>.target opens link in a new window or tab`,
+    async () => {
+      const newUrl = '/test/123';
+
+      const { removeLink } = appendLink(newUrl, {
+        target: '_blank',
+      });
+      const observer = init({
+        routes: Object.values(routes),
+      });
+      let eventButton = -1;
+
+      window.addEventListener('click', (ev: MouseEvent) => {
+        ev.preventDefault();
+
+        eventButton = ev.button;
+        removeLink();
+      });
+
+      window.addEventListener(pushStateEventKey, () => {
+        eventButton = -2;
+        removeLink();
+      });
+
+      await pageClick(`a[href="${newUrl}"]`, {
+        button: 'left',
+      });
+
+      assert.strictEqual(window.location.pathname, '/');
+      assert.strictEqual(eventButton, 0);
+      assert.deepStrictEqual<URLChangedStatus[]>(
+        observer.takeRecords().map(n => n.entryType),
+        ['init']
+      );
+    }
+  );
+
+  it(`does not intercept click when <click>.target is inside an iframe`, async () => {
+    const newUrl = '/test/123';
+
+    const observer = init({
+      routes: Object.values(routes),
+    });
+
+    const result: string[] = [];
+    const eventButtons: number[] = [];
+
+    for (const linkTarget of ['_parent', '_top']) {
+      const frame = document.createElement('iframe');
+      /**
+       * In FF82, iframe does not behave like other browsers when comes to appending/ loading
+       * content. Here wait for load event before writing any content into the iframe.
+       */
+      const frameLoaded = new Promise(y => frame.onload = y);
+      const removeFrame = () => {
+        if (frame.parentElement) document.body.removeChild(frame);
+      };
+      const link = document.createElement('a');
+
+      frame.setAttribute('name', newUrl);
+      link.href = link.textContent = newUrl;
+      link.setAttribute('target', linkTarget);
+
+      document.body.appendChild(frame);
+
+      await frameLoaded;
+
+      frame.contentDocument?.body.appendChild(link);
+
+      const linkClicked = new Promise((y) => {
+        frame.contentWindow?.addEventListener('click', (ev: MouseEvent) => {
+          ev.preventDefault();
+
+          eventButtons.push(ev.button);
+          removeFrame();
+          y();
+        });
+
+        window.addEventListener(pushStateEventKey, () => {
+          eventButtons.push(-2);
+          removeFrame();
+          y();
+        });
+      });
+
+      await frameClick({
+        name: newUrl,
+        selector: `a[href="${newUrl}"]`,
+        options: {
+          button: 'left',
+        },
+      });
+      await linkClicked;
+
+      result.push(window.location.pathname);
+    }
+
+    assert.deepStrictEqual(result, ['/', '/']);
+    assert.deepStrictEqual(eventButtons, [0, 0]);
+    assert.deepStrictEqual<URLChangedStatus[]>(
+      observer.takeRecords().map(n => n.entryType),
+      ['init']
+    );
+  });
+
+  it(`does not intercept click when <click>.target is a cross-origin link`, async () => {
+    const newUrl = 'https://example.com/test/123';
+
+    const { removeLink } = appendLink(newUrl);
+    const observer = init({
+      routes: Object.values(routes),
+    });
+    let eventButton = -1;
+
+    window.addEventListener('click', (ev: MouseEvent) => {
+      ev.preventDefault();
+
+      eventButton = ev.button;
+      removeLink();
+    });
+
+    window.addEventListener(pushStateEventKey, () => {
+      eventButton = -2;
+      removeLink();
+    });
+
+    await pageClick(`a[href="${newUrl}"]`, {
+      button: 'left',
+    });
+
+    assert.strictEqual(window.location.pathname, '/');
+    assert.strictEqual(eventButton, 0);
+    assert.deepStrictEqual<URLChangedStatus[]>(
+      observer.takeRecords().map(n => n.entryType),
+      ['init']
+    );
+  });
+
+  it(`does not update URL when new URL is the same as current URL`, async () => {
+    const newUrl = '/test/123';
+
+    const { removeLink } = appendLink(newUrl);
+    const observer = init({
+      routes: Object.values(routes),
+    });
+
+    await waitForEvent('click', async () => {
+      await observer.updateHistory(newUrl);
+      await pageClick(`a[href="${newUrl}]`, {
+        button: 'left',
+      });
+    });
+
+    removeLink();
+
+    assert.strictEqual(window.location.pathname, newUrl);
+    assert.deepStrictEqual<URLChangedStatus[]>(
+      observer.takeRecords().map(n => n.entryType),
+      ['init', 'manual']
+    );
+  });
+
+  it(`does not update URL when before route handler returns false`, async () => {
+    const newUrl = '/test/123';
+
+    const { removeLink } = appendLink(newUrl, { scope: '' });
+    const observer = init({
+      routes: Object.values(routes),
+    });
+    let result: string = '';
+
+    observer.add({
+      pathRegExp: routes.section,
+      handleEvent() {
+        result = newUrl;
+        return false;
+      },
+      scope: '',
+    });
+
+    await waitForEvent('click', async () => {
+      await pageClick(`a[href="${newUrl}"]`, {
+        button: 'left',
+      });
+    });
+
+    removeLink();
+
+    assert.strictEqual(window.location.pathname, '/');
+    assert.deepStrictEqual(result, newUrl);
+    assert.deepStrictEqual<URLChangedStatus[]>(
+      observer.takeRecords().map(n => n.entryType),
+      ['init']
+    );
+  });
+
+  it(`updates URL with before route handler`, async () => {
+    const anchorOptions: [string, Record<string, string>][] = [
       ['/test/123', { '.scope': '' }],
       ['/test/456', { scope: '' }],
       ['/test/789', { '.scope': 'test' }],
       ['/test/abc', { scope: 'test' }],
     ];
-    const expected: D = await browser.executeAsync(async(
-      a: C[],
-      done
-    ) => {
-      const $w = window as unknown as Window;
-      const { appendLink, initObserver, waitForEvent } = $w.TestHelpers;
-      const routes: A = {
-        test: /^\/test$/i,
-        section: /^\/test\/(?<test>[^\/]+)$/i,
-      };
 
-      const observer = initObserver({ routes: Object.values(routes) });
-      const result: B[] = [];
+    const observer = init({
+      routes: Object.values(routes),
+      observerOption: { dwellTime: -1 },
+    });
 
-      for (const [na, nb] of a) {
-        const { link, removeLink } = appendLink(na, nb);
+    const result: Record<string, string>[] = [];
+    for (const [newUrl, newUrlMatch] of anchorOptions) {
+      const { removeLink } = appendLink(newUrl, newUrlMatch);
 
-        observer.add({
-          pathRegExp: routes.section,
-          handleEvent: () => {
-            result.push(nb);
-            return true;
-          },
-          scope: nb[Object.keys(nb)[0]],
+      observer.add({
+        pathRegExp: routes.section,
+        handleEvent() {
+          result.push(newUrlMatch);
+          return true;
+        },
+        scope: newUrlMatch?.scope ?? newUrlMatch?.['.scope'],
+      });
+
+      await waitForEvent('click', async () => {
+        await pageClick(`a[href="${newUrl}"]`, {
+          button: 'left',
         });
-
-        await waitForEvent('click', () => {
-          link.click();
-        });
-
-        removeLink();
-      }
-
-      done([
-        result,
-        observer.takeRecords().map(n => n.entryType),
-      ]);
-    }, anchorOptions);
-
-    expect(expected).toEqual<D>([
-      anchorOptions.map(([, n]) => n),
-      ['init', 'click', 'click', 'click', 'click'],
-    ]);
-  });
-
-  it(`updates URL with no before route handler`, async () => {
-    type A = Record<'test' | 'section', RegExp>;
-    type B = URLChangedStatus[];
-
-    const newUrl = '/test/123';
-    const expected: B = await browser.executeAsync(async(
-      a: string,
-      done
-    ) => {
-      const $w = window as unknown as Window;
-      const { appendLink, initObserver, waitForEvent } = $w.TestHelpers;
-      const routes: A = {
-        test: /^\/test$/i,
-        section: /^\/test\/(?<test>[^\/]+)$/i,
-      };
-
-      const observer = initObserver({ routes: Object.values(routes) });
-      const { link, removeLink } = appendLink(a);
-
-      await waitForEvent('click', () => {
-        link.click();
       });
 
       removeLink();
+    }
 
-      done(observer.takeRecords().map(n => n.entryType));
-    }, newUrl);
+    assert.strictEqual(window.location.pathname, anchorOptions[anchorOptions.length - 1][0]);
+    assert.deepStrictEqual(result, anchorOptions.map(([, n]) => n));
+    assert.deepStrictEqual<URLChangedStatus[]>(
+      observer.takeRecords().map(n => n.entryType),
+      ['init', 'click', 'click', 'click', 'click']
+    );
+  });
 
-    expect(expected).toEqual<B>(['init', 'click']);
+  it(`updates URL with before route handler`, async () => {
+    const newUrl = '/test/123';
+
+    const observer = init({
+      routes: Object.values(routes),
+    });
+
+    const { removeLink } = appendLink(newUrl);
+
+    await waitForEvent('click', async () => {
+      await pageClick(`a[href="${newUrl}"]`, {
+        button: 'left',
+      });
+    });
+
+    removeLink();
+
+    assert.strictEqual(window.location.pathname, newUrl);
+    assert.deepStrictEqual<URLChangedStatus[]>(
+      observer.takeRecords().map(n => n.entryType),
+      ['init', 'click']
+    );
   });
 
 });

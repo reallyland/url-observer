@@ -1,119 +1,104 @@
+import { assert } from '@esm-bundle/chai';
+
 import { pushStateEventKey } from '../constants.js';
 import type { RouteEvent, URLChangedStatus } from '../custom_typings.js';
-import type { URLObserver } from '../url-observer.js';
-import { HOST } from './config.js';
-import { itSkip } from './webdriverio-test-helpers.js';
+import type { URLObserverWithDebug } from './custom_test_typings.js';
+import { appendLink } from './helpers/append-link.js';
+import { initObserver } from './helpers/init-observer.js';
+import { waitForEvent } from './helpers/wait-for-event.js';
+import { pageClick } from './wtr-helpers/page-click.js';
+
+function normalizeEventDetailUrl<T>(detail?: RouteEvent<T>): RouteEvent<T> {
+  if (detail == null) return {} as RouteEvent<T>;
+
+  const url = new URL(detail.url);
+
+  return {
+    ...detail,
+    url: `${url.pathname}${url.hash}`,
+  };
+}
 
 describe('usages-route-match', () => {
-  /** Always load the page to reset URL history */
-  beforeEach(async () => {
-    await browser.url(HOST);
+  const observers: Set<URLObserverWithDebug> = new Set();
+  const init = initObserver(observers);
+  const routes: Record<'section' | 'test', RegExp> = {
+    section: /^\/test\/(?<test>[^\/]+)$/i,
+    test: /^\/test$/i,
+  };
+
+  const originalUrl = window.location.href;
+
+  beforeEach(() => {
+    observers.forEach(n => n.disconnect());
+    observers.clear();
+
+    window.history.replaceState({}, '', originalUrl);
   });
 
-  afterEach(async () => {
-    await browser.executeAsync(async (done) => {
-      const obsList: URLObserver[] = window.observerList;
-
-      for (const obs of obsList) obs.disconnect();
-
-      done();
-    });
-  });
-
-  itSkip([
-    'microsoftedge',
-  ])(`pushes URL that is a matched route`, async () => {
-    type A = Record<'test' | 'section', RegExp>;
-    interface B {
-      test?: string;
-    }
-    type C = [RouteEvent, URLChangedStatus[]];
+  // skip microsoftedge
+  it(`pushes URL that is a matched route`, async () => {
+    type A = Record<'test', string>;
 
     const newUrl = '/test/123';
-    const expected: C = await browser.executeAsync(async (
-      a: string,
-      b: string,
-      done
-    ) => {
-      const $w = window as unknown as Window;
-      const { appendLink, initObserver, waitForEvent } = $w.TestHelpers;
-      const routes: A = {
-        test: /^\/test$/i,
-        section: /^\/test\/(?<test>[^\/]+)$/i,
-      };
 
-      const { link, removeLink } = appendLink(a);
-      const observer = initObserver({ routes: Object.values(routes) });
+    const { removeLink } = appendLink(newUrl);
+    const observer = init({
+      routes: Object.values(routes),
+    });
 
-      const ev = await waitForEvent<CustomEvent<RouteEvent<B>>>(b, () => {
-        link.click();
+    const ev = await waitForEvent<CustomEvent<RouteEvent<A>>>(pushStateEventKey, async () => {
+      await pageClick(`a[href="${newUrl}"]`, {
+        button: 'left',
       });
+    });
 
-      removeLink();
+    removeLink();
 
-      done([
-        ev?.detail,
-        observer.takeRecords().map(n => n.entryType),
-      ]);
-    }, newUrl, pushStateEventKey);
-
-    expect(expected).toStrictEqual<C>([
-      {
-        found: true,
-        matches: { test: '123' },
-        scope: '',
-        status: 'click',
-        url: `http://localhost:4000${newUrl}`,
+    assert.deepStrictEqual<RouteEvent<A>>(normalizeEventDetailUrl(ev?.detail), {
+      found: true,
+      matches: {
+        test: '123',
       },
-      ['init', 'click'],
-    ]);
+      scope: '',
+      status: 'click',
+      url: newUrl,
+    });
+    assert.deepStrictEqual<URLChangedStatus[]>(
+      observer.takeRecords().map(n => n.entryType),
+      ['init', 'click']
+    );
   });
 
-  it(`pushes URL that is a not-found route`, async () => {
-    type A = Record<'test' | 'section', RegExp>;
-    interface B {
-      test?: string;
-    }
-    type C = [RouteEvent, URLChangedStatus[]];
+  it(`pushes URL tht is a not-found route`, async () => {
+    type A = Partial<Record<'test', string>>;
 
     const newUrl = '/test2';
-    const expected: C = await browser.executeAsync(async (
-      a: string,
-      b: string,
-      done
-    ) => {
-      const $w = window as unknown as Window;
-      const { appendLink, initObserver, waitForEvent } = $w.TestHelpers;
-      const routes: A = {
-        test: /^\/test$/i,
-        section: /^\/test\/(?<test>[^\/]+)$/i,
-      };
 
-      const { link, removeLink } = appendLink(a);
-      const observer = initObserver({ routes: Object.values(routes) });
+    const { removeLink } = appendLink(newUrl);
+    const observer = init({
+      routes: Object.values(routes),
+    });
 
-      const ev = await waitForEvent<CustomEvent<RouteEvent<B>>>(b, () => {
-        link.click();
+    const ev = await waitForEvent<CustomEvent<RouteEvent<A>>>(pushStateEventKey, async () => {
+      await pageClick(`a[href="${newUrl}"]`, {
+        button: 'left',
       });
+    });
 
-      removeLink();
+    removeLink();
 
-      done([
-        ev?.detail,
-        observer.takeRecords().map(n => n.entryType),
-      ]);
-    }, newUrl, pushStateEventKey);
-
-    expect(expected).toStrictEqual<C>([
-      {
-        found: false,
-        matches: {},
-        scope: '',
-        status: 'click',
-        url: `http://localhost:4000${newUrl}`,
-      },
-      ['init', 'click'],
-    ]);
+    assert.deepStrictEqual<RouteEvent<A>>(normalizeEventDetailUrl(ev?.detail), {
+      found: false,
+      matches: {},
+      scope: '',
+      status: 'click',
+      url: newUrl,
+    });
+    assert.deepStrictEqual<URLChangedStatus[]>(
+      observer.takeRecords().map(n => n.entryType),
+      ['init', 'click']
+    );
   });
 
 });

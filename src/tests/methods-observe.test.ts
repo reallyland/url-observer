@@ -1,131 +1,81 @@
+import { assert } from '@esm-bundle/chai';
+
 import type { URLChangedStatus } from '../custom_typings.js';
-import type { URLObserver } from '../url-observer.js';
-import { HOST } from './config.js';
 import type { URLObserverWithDebug } from './custom_test_typings.js';
-import type { TriggerEventsEventName, TriggerEventsResult } from './test-helpers.js';
+import { initObserver } from './helpers/init-observer.js';
+import { toResult } from './helpers/to-result.js';
+import { TriggerEventListeners, triggerEvents, TriggerEventsEvents } from './helpers/trigger-event.js';
 
 describe('methods-observe', () => {
-  /** Always load the page to reset URL history */
-  beforeEach(async () => {
-    await browser.url(HOST);
+  const observers: Set<URLObserverWithDebug> = new Set();
+  const init = initObserver(observers);
+
+  beforeEach(() => {
+    observers.forEach(n => n.disconnect());
+    observers.clear();
   });
 
-  afterEach(async () => {
-    await browser.executeAsync(async (done) => {
-      const obsList: URLObserver[] = window.observerList;
-
-      for (const obs of obsList) obs.disconnect();
-
-      done();
-    });
-  });
-
-  it(`observes URL changes with routes`, async () => {
+  it(`observes URL changes with routes`, () => {
     type A = [string, boolean];
 
-    const expected: A[] = await browser.executeAsync(async (done) => {
-      const $w = window as unknown as Window;
-      const { initObserver } = $w.TestHelpers;
-
-      const observer = initObserver({
-        routes: [/^\/test/i],
-        observerOption: { debug: true },
-      });
-
-      const result: A[] = [];
-      for (const [k, { beforeRouteHandlers }] of (observer as URLObserverWithDebug).routes) {
-        result.push([k, !beforeRouteHandlers.size]);
-      }
-
-      done(result);
+    const observer = init({
+      routes: [/^\/test/i],
     });
 
-    expect(expected).toEqual<A[]>([['/^\\/test/i', true]]);
+    const result = toResult<A>(observer.routes, h => !h.size);
+
+    assert.deepStrictEqual(result, [
+      ['/^\\/test/i', true],
+    ]);
   });
 
-  it(`observes URL changes with no route`, async () => {
-    type A = number;
-
-    const expected: A = await browser.executeAsync(async (done) => {
-      const $w = window as unknown as Window;
-      const { initObserver } = $w.TestHelpers;
-
-      const observer = initObserver({
-        routes: [],
-        observerOption: { debug: true },
-      });
-
-      done((observer as URLObserverWithDebug).routes.size);
+  it(`observes URL changes with no route`, () => {
+    const observer = init({
+      routes: [],
     });
 
-    expect(expected).toStrictEqual(0);
+    assert.strictEqual(observer.routes.size, 0);
   });
 
-  it(`adds 'init' as first record when .observe() is called`, async () => {
-    type A = URLChangedStatus[];
+  it(`adds 'init' as first record when .observe() is called`, () => {
+    const observer = init();
 
-    const expected: A = await browser.executeAsync(async (done) => {
-      const $w = window as unknown as Window;
-      const { initObserver } = $w.TestHelpers;
+    observer.observe([/^\/test$/i]);
 
-      const observer = initObserver({ observerOption: { debug: true } });
-
-      observer.observe([/^\/test$/i]);
-      $w.observerList.push(observer);
-
-      done(observer.takeRecords().map(n => n.entryType));
-    });
-
-    expect(expected).toEqual<A>(['init']);
+    assert.deepStrictEqual(observer.takeRecords().map(n => n.entryType), ['init']);
   });
 
   it(`observes URL changes`, async () => {
-    type A = TriggerEventsEventName;
-    type B = TriggerEventsResult;
-    type C = [B, URLChangedStatus[]];
+    const eventNames: TriggerEventsEvents = ['click', 'hashchange', 'popstate'];
+    const listeners: TriggerEventListeners = {};
+    const observer = init();
+    const run = triggerEvents(listeners);
 
-    const expected: C = await browser.executeAsync(async (done) => {
-      const $w = window as unknown as Window;
-      const { initObserver, triggerEvents } = $w.TestHelpers;
+    for (const n of eventNames) {
+      await run(n, true);
+    }
 
-      const mergeListeners = (la: B, lb: B): B => {
-        return {
-          click: la.click.concat(lb.click),
-          hashchange: la.hashchange.concat(lb.hashchange),
-          popstate: la.popstate.concat(lb.popstate),
-        };
-      };
-      const eventNames: A[] = ['click', 'hashchange', 'popstate'];
-      const observer = initObserver({ observerOption: { debug: true } });
+    observer.observe([/^\/test$/i]);
 
-      let listeners: B = {
-        click: [],
-        hashchange: [],
-        popstate: [],
-      };
+    for (const n of eventNames) {
+      await run(n);
+    }
 
-      for (const n of eventNames) {
-        listeners = mergeListeners(listeners, await triggerEvents(n, true));
-      }
-
-      observer.observe([/^\/test$/i]);
-      $w.observerList.push(observer);
-
-      for (const n of eventNames) {
-        listeners = mergeListeners(listeners, await triggerEvents(n));
-      }
-
-      done([listeners, observer.takeRecords().map(n => n.entryType)]);
+    assert.deepStrictEqual(listeners, {
+      click: [null, 'click'],
+      hashchange: [null, 'hashchange'],
+      popstate: [null, 'popstate'],
     });
-
-    expect(expected).toEqual<C>([
-      {
-        click: [null, 'click'],
-        hashchange: [null, 'hashchange'],
-        popstate: [null, 'popstate'],
-      },
-      ['init', 'click', 'popstate', 'hashchange', 'popstate'],
-    ]);
+    assert.deepStrictEqual<URLChangedStatus[]>(
+      observer.takeRecords().map<URLChangedStatus>(n => n.entryType),
+      [
+        'init',
+        'click',
+        'popstate',
+        'hashchange',
+        'popstate',
+      ]
+    );
   });
 
 });

@@ -1,183 +1,139 @@
+import { assert } from '@esm-bundle/chai';
 import { pushStateEventKey } from '../constants.js';
 import type { URLChangedStatus } from '../custom_typings.js';
-import type { URLObserver } from '../url-observer.js';
-import { HOST } from './config.js';
 
-interface MockRecord {
-  data: Record<string, any>;
-  title: string;
-  url: string;
-  type: 'push' | 'replace';
-}
+import type { URLObserverWithDebug } from './custom_test_typings.js';
+import { appendLink } from './helpers/append-link.js';
+import { HistoryMock, MockRecord } from './helpers/history-mock.js';
+import { initObserver } from './helpers/init-observer.js';
+import { waitForEvent } from './helpers/wait-for-event.js';
+import { pageClick } from './wtr-helpers/page-click.js';
 
 describe('usages-history', () => {
-  /** Always load the page to reset URL history */
-  beforeEach(async () => {
-    await browser.url(HOST);
+  const observers: Set<URLObserverWithDebug> = new Set();
+  const init = initObserver(observers);
+  const routes: Record<'section' | 'test', RegExp> = {
+    section: /^\/test\/(?<test>[^\/]+)$/i,
+    test: /^\/test$/i,
+  };
 
-    /** Mock .pushState() and .replaceState() in window.history */
-    await browser.executeAsync(async (done) => {
-      class MockHistory {
-        _replaceState: History['replaceState'] = window.history.replaceState.bind(window.history);
-        _pushState: History['pushState'] = window.history.pushState.bind(window.history);
-        _mockRecords: MockRecord[] = [];
+  let historyMock: HistoryMock;
 
-        mock() {
-          const mockFn = (type: MockRecord['type']) =>
-            (data: MockRecord['data'], title: string, url: string) => {
-              this._mockRecords.push({ data, title, type, url });
-            };
+  beforeEach(() => {
+    historyMock = new HistoryMock();
+    historyMock.mock();
 
-          window.history.pushState = mockFn('push');
-          window.history.replaceState = mockFn('replace');
-        }
-
-        restoreMock() {
-          window.history.replaceState = this._replaceState;
-          window.history.pushState = this._pushState;
-        }
-
-        takeRecords(): MockRecord[] {
-          return Array.from(this._mockRecords);
-        }
-      }
-
-      const mockHistory = new MockHistory();
-
-      mockHistory.mock();
-
-      (window as any).TestMock = mockHistory;
-
-      done();
-    });
+    observers.forEach(n => n.disconnect());
+    observers.clear();
   });
 
-  afterEach(async () => {
-    await browser.executeAsync(async (done) => {
-      const obsList: URLObserver[] = window.observerList;
-
-      for (const obs of obsList) obs.disconnect();
-
-      /** Restore window.history */
-      if ((window as any).TestMock) {
-        (window as any).TestMock.restoreMock();
-      }
-
-      done();
-    });
+  afterEach(() => {
+    historyMock.restoreMock();
   });
 
   it(`replaces history when 'status' !== 'click'`, async () => {
-    type A = Record<'test' | 'section', RegExp>;
-    type B = URLChangedStatus[];
-    type C = [MockRecord[], B];
+    const statuses: URLChangedStatus[] = ['hashchange', 'manual'];
 
-    const expected: C = await browser.executeAsync(async (
-      a: string,
-      done
-    ) => {
-      const $w = window as unknown as Window;
-      const { initObserver, waitForEvent } = $w.TestHelpers;
-      const routes: A = {
-        test: /^\/test$/i,
-        section: /^\/test\/(?<test>[^\/]+)$/i,
-      };
-      const statuses: B = ['hashchange', 'manual'];
+    const observer = init({
+      routes: Object.values(routes),
+    });
 
-      const observer = initObserver({ routes: Object.values(routes) });
-
-      for (const n of statuses) {
-        switch (n) {
-          case 'hashchange': {
-            await waitForEvent(a, () => {
-              $w.location.hash = 'test';
-            });
-            break;
-          }
-          case 'manual': {
-            await observer.updateHistory('/test');
-            break;
-          }
-          // These 2 can be skipped
-          // case 'init':
-          // case 'popstate':
-          default:
+    for (const n of statuses) {
+      switch (n) {
+        case 'hashchange': {
+          /**
+           * 2 events will be fired when hash changes: popstate then hashchange.
+           * For popstate event, `popStateEventKey` will be fired by the observer.
+           * For hashchange event, `pushStateEventKey` will be fired by the observer.
+           * So listening to just `pushStateEventKey` suffices in this case to ensure both events
+           * are fired in the correct order.
+           */
+          await waitForEvent(pushStateEventKey, () => {
+            window.location.hash = 'test';
+          });
+          break;
         }
+        case 'manual': {
+          await observer.updateHistory('/test');
+          break;
+        }
+        // These 2 can be skipped
+        // case 'init':
+        // case 'popstate':
+        default:
       }
+    }
 
-      done([
-        ($w as any).TestMock.takeRecords(),
-        observer.takeRecords().map(n => n.entryType),
-      ]);
-    }, pushStateEventKey);
+    assert.deepStrictEqual<URLChangedStatus[]>(
+      observer.takeRecords().map(n => n.entryType),
+      ['init', 'popstate', 'hashchange', 'manual']
+    );
+    assert.deepStrictEqual(
+      historyMock.takeRecords().map((n) => {
+        const url = new URL(n.url);
 
-    expect(expected).toStrictEqual<C>([
+        return {
+          ...n,
+          url: url.href.replace(url.origin, '').replace(url.search, ''),
+        };
+      }),
       [
-        { data: {}, title: '', type: 'replace', url: 'http://localhost:4000/test.html' },
-        { data: {}, title: '', type: 'replace', url: 'http://localhost:4000/test.html#test' },
-        { data: {}, title: '', type: 'replace', url: 'http://localhost:4000/test.html#test' },
-        { data: {}, title: '', type: 'replace', url: 'http://localhost:4000/test' },
-      ],
-      ['init', 'popstate', 'hashchange', 'manual'],
-    ]);
+        { data: {}, title: '', type: 'replace', url: '/' },
+        { data: {}, title: '', type: 'replace', url: '/#test' },
+        { data: {}, title: '', type: 'replace', url: '/#test' },
+        { data: {}, title: '', type: 'replace', url: '/test' },
+      ]
+    );
   });
 
-  it(`pushes history when 'status' === 'click' && not within 'dwellTime'`, async () => {
-    type A = Record<'test' | 'section', RegExp>;
-    type B = URLChangedStatus[];
-    type C = [MockRecord[], B[]];
+  it(`pushes history when 'status' === 'click' AND not within 'dwellTime'`, async () => {
+    type A = URLChangedStatus[][];
 
-    const expected: C = await browser.executeAsync(async (
-      a: string,
-      done
-    ) => {
-      const $w = window as unknown as Window;
-      const { appendLink, initObserver, waitForEvent } = $w.TestHelpers;
-      const routes: A = {
-        test: /^\/test$/i,
-        section: /^\/test\/(?<test>[^\/]+)$/i,
-      };
-      const options: number[] = [1e2, -1];
+    const dwellTimeOptions: number[] = [1e2, -1];
+    const result: A = [];
 
-      const result: URLChangedStatus[][] = [];
+    for (const dwellTime of dwellTimeOptions) {
+      const newUrl = `/test-${dwellTime}`;
+      const { removeLink } = appendLink(newUrl);
+      const observer = init({
+        routes: Object.values(routes),
+        observerOption: { dwellTime },
+      });
 
-      let i = 0;
+      if (dwellTime > 0) await new Promise(y => window.setTimeout(y, dwellTime));
 
-      for (const dwellTime of options) {
-        const observer = initObserver({
-          routes: Object.values(routes),
-          observerOption: { dwellTime },
+      await waitForEvent(pushStateEventKey, async () => {
+        await pageClick(`a[href="${newUrl}"]`, {
+          button: 'left',
         });
-        const { link, removeLink } = appendLink(`/test-00${i}`);
+      });
 
-        if (dwellTime > 0) await new Promise(y => setTimeout(y, dwellTime));
+      result.push(observer.takeRecords().map(n => n.entryType));
 
-        await waitForEvent(a, () => link.click());
+      removeLink();
+      observer.disconnect();
+    }
 
-        result.push(observer.takeRecords().map(n => n.entryType));
+    assert.deepStrictEqual<MockRecord[]>(
+      historyMock.takeRecords().map((n) => {
+        const url = new URL(n.url);
 
-        removeLink();
-        observer.disconnect();
-        i += 1;
-      }
-
-      done([
-        ($w as any).TestMock.takeRecords(),
-        result,
-      ]);
-    }, pushStateEventKey);
-
-    expect(expected).toStrictEqual<C>([
+        return {
+          ...n,
+          url: url.href.replace(url.origin, '').replace(url.search, ''),
+        };
+      }),
       [
-        { data: {}, title: '', type: 'replace', url: 'http://localhost:4000/test.html' },
-        { data: {}, title: '', type: 'push', url: 'http://localhost:4000/test-000' },
-        { data: {}, title: '', type: 'replace', url: 'http://localhost:4000/test.html' },
-        { data: {}, title: '', type: 'push', url: 'http://localhost:4000/test-001' },
-      ],
-      [
-        ['init', 'click'],
-        ['init', 'click'],
-      ],
+        { data: {}, title: '', type: 'replace', url: '/' },
+        { data: {}, title: '', type: 'push', url: '/test-100' },
+        { data: {}, title: '', type: 'replace', url: '/' },
+        { data: {}, title: '', type: 'push', url: '/test--1' },
+      ]
+    );
+    assert.deepStrictEqual<A>(result, [
+      ['init', 'click'],
+      ['init', 'click'],
     ]);
   });
+
 });

@@ -1,378 +1,315 @@
+import { assert } from '@esm-bundle/chai';
+import { pathToRegexp } from 'path-to-regexp';
+
 import { pushStateEventKey } from '../constants.js';
-import type { MatchedRoute, RouteValue, URLObserverEntryProperties } from '../custom_typings.js';
-import type { URLObserver } from '../url-observer.js';
-import { HOST } from './config.js';
+import type { MatchedRoute, RouteValue, URLChangedStatus, URLObserverEntryProperties } from '../custom_typings.js';
+import { URLObserver } from '../url-observer.js';
 import type { URLObserverWithDebug } from './custom_test_typings.js';
-import type { AppendLinkResult } from './test-helpers.js';
-import { itSkip } from './webdriverio-test-helpers.js';
+import { appendLink, AppendLinkResult } from './helpers/append-link.js';
+import { initObserver } from './helpers/init-observer.js';
+import { waitForEvent } from './helpers/wait-for-event.js';
 
 describe('url-observer', () => {
-  /** Always load the page to reset URL history */
-  beforeEach(async () => {
-    await browser.url(HOST);
+  const observers: Set<URLObserverWithDebug> = new Set();
+  const init = initObserver(observers);
+
+  beforeEach(() => {
+    observers.forEach(n => n.disconnect());
+    observers.clear();
   });
 
-  afterEach(async () => {
-    await browser.executeAsync(async (done) => {
-      const obsList: URLObserver[] = window.observerList;
+  it(`returns the correct name`, () => {
+    const observer = init();
 
-      for (const obs of obsList) obs.disconnect();
-
-      done();
-    });
+    assert.strictEqual(observer[Symbol.toStringTag], 'URLObserver');
+    assert.strictEqual(Object.prototype.toString.call(observer), '[object URLObserver]');
   });
 
-  it(`instantiates without 'callback'`, async () => {
-    type A = boolean;
-    const expected: A = await browser.executeAsync(async (done) => {
-      const $w = window as unknown as Window;
-      const { initObserver } = $w.TestHelpers;
+  it(`instantiates without 'callback'`, () => {
+    const observer = init();
 
-      const observer = initObserver();
-
-      done(typeof(observer) === 'object');
-    });
-
-    expect(expected).toBeTruthy();
+    assert.instanceOf(observer, URLObserver);
   });
 
-  it(`instantiates with 'callback'`, async () => {
-    type A = boolean;
-    const expected: A = await browser.executeAsync(async (done) => {
-      const $w = window as unknown as Window;
-      const { initObserver } = $w.TestHelpers;
-
-      const observer = initObserver({
-        callback: (list, obs) => {
-          /** Do nothing */
-          return [list, obs];
-        },
-      });
-
-      done(typeof(observer) === 'object');
+  it(`instantiates with 'callback'`, () => {
+    const observer = init({
+      callback(list, obs) {
+        /** Do nothing */
+        return [list, obs];
+      },
     });
 
-    expect(expected).toBeTruthy();
+    assert.instanceOf(observer, URLObserver);
   });
 
   it(`runs 'callback' on URL change`, async () => {
-    type A = [URLObserverEntryProperties[], boolean];
+    let linkClicked = false;
 
     const newUrl = '/test';
-    const expected: A = await browser.executeAsync(async (
-      a: string,
-      b: string,
-      done
-    ) => {
-      const $w = window as unknown as Window;
-      const { appendLink, initObserver, waitForEvent } = $w.TestHelpers;
-
-      let linkClicked = false;
-
-      const observer = initObserver({
-        callback: (list, obs) => {
+    const [
+      urlEntries,
+      observerParam,
+    ] = await new Promise<[URLObserverEntryProperties[], URLObserver]>(async (y) => {
+      const { link, removeLink } = appendLink(newUrl);
+      const observer = init({
+        callback(list, obs) {
           if (!linkClicked) return;
 
-          const entries = list.getEntries();
-          const result: A = [[], false];
+          const result: URLObserverEntryProperties[] = [];
 
-          for (const entry of entries) result[0].push(entry.toJSON());
-          result[1] = (typeof(obs) === 'object');
+          for (const entry of list.getEntries()) {
+            result.push(entry.toJSON());
+          }
 
-          done(result);
+          y([result, obs]);
         },
       });
-      const { link, removeLink } = appendLink(a);
 
       observer.observe([/^\/test$/i]);
 
-      await waitForEvent(b, () => {
+      await waitForEvent(pushStateEventKey, () => {
+        /**
+         * Set linkClicked to true first so that 'callback' can be called after link click.
+         * - Wrong: link.click() -> linkClicked is false -> noop
+         * - Correct: linkClicked is true -> link.click() -> Run 'callback'
+         */
         linkClicked = true;
         link.click();
       });
 
       removeLink();
-    }, newUrl, pushStateEventKey);
-
-    const [urlEntries, isFn] = expected;
-
-    expect(urlEntries).toHaveLength(2);
-    expect(urlEntries.map(n => n.entryType)).toEqual(['init', 'click']);
-    expect(urlEntries[1].url).toStrictEqual(expect.stringContaining(newUrl));
-    expect(isFn).toBeTruthy();
-  });
-
-  it(`does not run .observe() more than once`, async () => {
-    type A = URLObserverEntryProperties[];
-
-    const expected: A = await browser.executeAsync(async (done) => {
-      const $w = window as unknown as Window;
-      const { initObserver } = $w.TestHelpers;
-
-      const observer = initObserver();
-
-      observer.observe([/^\/test$/i]);
-      observer.observe([/^\/test$/i]);
-
-      done(observer.takeRecords().map(n => n.toJSON()));
     });
 
-    expect(expected.map(n => n.entryType)).toEqual(['init']);
+    assert.deepStrictEqual<URLChangedStatus[]>(
+      urlEntries.map(n => n.entryType),
+      ['init', 'click']
+    );
+    assert.strictEqual(new URL(urlEntries[1].url).pathname, newUrl);
+    assert.instanceOf(observerParam, URLObserver);
   });
 
-  itSkip([
-    'microsoftedge',
-  ])(`runs matcher with native RegExp capturing groups on URL change`, async () => {
-    type A = 'page' | 'section';
-    interface B {
-      test?: string;
-    }
+  it(`does not call .observe() more than once`, () => {
+    const observer = init();
+
+    observer.observe([/^\/test$/i]);
+    observer.observe([/^\/test$/i]);
+
+    assert.deepStrictEqual<URLChangedStatus[]>(
+      observer.takeRecords().map(n => n.entryType),
+      ['init']
+    );
+  });
+
+  // skip microsoftedge
+  it(`runs matcher with native RegExp capturing groups on URL change`, async () => {
+    type A = MatchedRoute<Record<'test', string>>;
 
     const newUrls = ['/test', '/test/123'];
-    const expected: MatchedRoute<B>[] = await browser.executeAsync(async (
-      a: string[],
-      b: string,
-      done
-    ) => {
-      const $w = window as unknown as Window;
-      const { appendLink, initObserver, waitForEvent } = $w.TestHelpers;
-      const routes: Record<A, RegExp> = {
-        page: /^\/test$/i,
-        section: /^\/test\/(?<test>[^\/]+)$/i,
-      };
+    const routes: Record<'page' | 'section', RegExp> = {
+      page: /^\/test$/i,
+      section: /^\/test\/(?<test>[^\/]+)$/i,
+    };
+    const observer = init({
+      routes: Object.values(routes),
+    });
 
-      const observer = initObserver({
-        routes: Object.values(routes),
+    const result: A[] = [];
+    for (const { link, removeLink } of newUrls.map(n => appendLink(n))) {
+      await waitForEvent(pushStateEventKey, () => {
+        link.click();
+        result.push(observer.match());
       });
 
-      const links: AppendLinkResult[] = a.map(n => appendLink(n));
-      const results: MatchedRoute<B>[] = [];
+      removeLink();
+    }
 
-      for (const { link, removeLink } of links) {
-        await waitForEvent(b, () => {
-          link.click();
-          results.push(observer.match<B>());
-        });
-
-        removeLink();
-      }
-
-      done(results);
-    }, newUrls, pushStateEventKey);
-
-    expect(expected).toHaveLength(2);
-    expect(expected).toEqual([
+    assert.deepStrictEqual(result, [
       { found: true, matches: {} },
       { found: true, matches: { test: '123' } },
     ]);
   });
 
   it(`runs with custom matcher callback on URL change`, async () => {
-    type A = 'page' | 'section';
-    interface B {
-      test?: string;
-    }
+    type A = MatchedRoute<Record<'test', string>>;
 
     const newUrls = ['/test', '/test/123'];
-    const expected: MatchedRoute<B>[] = await browser.executeAsync(async (
-      a: string[],
-      b: string,
-      done
-    ) => {
-      const $w = window as unknown as Window;
-      const { appendLink, initObserver, waitForEvent } = $w.TestHelpers;
-      const routes: Record<A, RegExp> = {
-        page: $w.pathToRegExp('/test'),
-        section: $w.pathToRegExp('/test/:test'),
-      };
+    const routes: Record<'page' | 'section', RegExp> = {
+      page: pathToRegexp('/test'),
+      section: pathToRegexp('/test/:test'),
+    };
 
-      const observer = initObserver({
-        routes: Object.values(routes),
-        observerOption: {
-          matcherCallback: function customMatcher<T>(p: string, r: RegExp): T {
-            const [, ...matches] = p.match(r) ?? [];
+    const observer = init({
+      routes: Object.values(routes),
+      observerOption: {
+        matcherCallback<T>(p: string, r: RegExp): T {
+          const [, ...matches] = p.match(r) ?? [];
 
-            switch (r) {
-              case routes.section: {
-                return { test: matches[0] } as unknown as T;
-              }
-              case routes.page:
-              default: {
-                return {} as unknown as T;
-              }
+          switch (r) {
+            case routes.section: {
+              return { test: matches[0] } as unknown as T;
             }
-          },
+            case routes.page:
+            default: {
+              return {} as unknown as T;
+            }
+          }
         },
+      },
+    });
+
+    const result: A[] = [];
+    for (const { link, removeLink } of newUrls.map(n => appendLink(n))) {
+      await waitForEvent(pushStateEventKey, () => {
+        link.click();
+        result.push(observer.match());
       });
 
-      const links: AppendLinkResult[] = a.map(n => appendLink(n));
-      const results: MatchedRoute<B>[] = [];
+      removeLink();
+    }
 
-      for (const { link, removeLink } of links) {
-        await waitForEvent(b, () => {
-          link.click();
-          results.push(observer.match<B>());
-        });
-
-        removeLink();
-      }
-
-      done(results);
-    }, newUrls, pushStateEventKey);
-
-    expect(expected).toHaveLength(2);
-    expect(expected).toEqual([
+    assert.deepStrictEqual(result, [
       { found: true, matches: {} },
       { found: true, matches: { test: '123' } },
     ]);
   });
 
   it(`does not expose 'routes' as public property when 'debug=false'`, async () => {
-    type A = boolean;
-
-    const expected: A = await browser.executeAsync(async (done) => {
-      const $w = window as unknown as Window;
-      const { initObserver } = $w.TestHelpers;
-
-      const observer = initObserver({ routes: [] });
-
-      /** This shows that 'routes' property is enumerable */
-      done(Object.keys(observer).includes('routes'));
+    const observer = init({
+      observerOption: {
+        debug: false,
+      },
+      routes: [],
     });
 
-    expect(expected).toBeFalsy();
+    /** This shows that 'routes' property is enumerable */
+    assert.notOk(Object.keys(observer).includes('routes'));
   });
 
-  it(`exposes 'routes' as public property when 'debug=true'`, async () => {
-    type A = boolean;
-    type C = [string, {
+  it(`exposes 'routes' as public property when 'debug=true'`, () => {
+    type A = [string, {
       [K in keyof RouteValue]: K extends 'beforeRouteHandlers' ? unknown[] : string;
     }];
 
-    const expected: A = await browser.executeAsync(async (done) => {
-      const $w = window as unknown as Window;
-      const { initObserver } = $w.TestHelpers;
-
-      const observer = initObserver({
-        routes: [/^\/test/i],
-        observerOption: { debug: true },
-      });
-      const result: C[] = [];
-
-      for (const [k, v] of (observer as URLObserverWithDebug).routes) {
-        const { beforeRouteHandlers, pathRegExp } = v;
-
-        result.push([k, {
-          beforeRouteHandlers: Array.from(beforeRouteHandlers),
-          pathRegExp: pathRegExp.toString(),
-        }]);
-      }
-
-      done(result);
+    const observer = init({
+      routes: [/^\/test/i],
     });
 
-    expect(expected).toEqual([
-      [
-        '/^\\/test/i', {
-          beforeRouteHandlers: [],
-          pathRegExp: '/^\\/test/i',
-        },
-      ],
+    const result: A[] = [];
+    for (const [k, { beforeRouteHandlers, pathRegExp }] of observer.routes) {
+      result.push([k, {
+        beforeRouteHandlers: Array.from(beforeRouteHandlers),
+        pathRegExp: String(pathRegExp),
+      }]);
+    }
+
+    assert.deepStrictEqual(result, [
+      ['/^\\/test/i', {
+        beforeRouteHandlers: [],
+        pathRegExp: '/^\\/test/i',
+      }],
     ]);
   });
 
   it(`runs matcher with default 'dwellTime'`, async () => {
-    type A = 'page' | 'section';
-    type B = string;
-
     const newUrls = ['/test', '/test/123', '/test/456'];
-    const expected: B = await browser.executeAsync(async (
-      a: string[],
-      b: string,
-      done
-    ) => {
-      const $w = window as unknown as Window;
-      const { appendLink, initObserver, waitForEvent } = $w.TestHelpers;
-      const routes: Record<A, RegExp> = {
-        page: /^\/test$/i,
-        section: /^\/test\/(?<test>[^\/]+)$/i,
-      };
+    const routes: Record<'page' | 'section', RegExp> = {
+      page: /^\/test$/i,
+      section: /^\/test\/(?<test>[^\/]+)$/i,
+    };
 
-      initObserver({ routes: Object.values(routes) });
+    init({
+      routes: Object.values(routes),
+    });
 
-      const links: AppendLinkResult[] = a.map(n => appendLink(n));
+    /** Push all URLs into history */
+    for (const { link, removeLink } of newUrls.map(n => appendLink(n))) {
+      await waitForEvent(pushStateEventKey, () => {
+        link.click();
+      });
 
-      /** Push all URLs into history */
-      for (const { link, removeLink } of links) {
-        await waitForEvent(b, () => {
-          link.click();
-        });
+      removeLink();
 
-        removeLink();
+      await new Promise(y => window.setTimeout(y, 2e3));
+    }
 
-        await new Promise(y => setTimeout(y, 2e3));
-      }
+    /** Pop 2 URLs out of history */
+    for (const _ of '12') {
+      await waitForEvent('popstate', () => {
+        window.history.back();
+      });
+    }
 
-      /** Pop last and 2nd URLs */
-      for (const _ of '12') {
-        await waitForEvent('popstate', () => {
-          $w.history.back();
-        });
-      }
-
-      /** Current URL should be the 1st URL */
-      done($w.location.href);
-    }, newUrls, pushStateEventKey);
-
-    const url = new URL(expected);
-
-    expect(url.pathname).toStrictEqual(newUrls[0]);
+    assert.strictEqual(new URL(window.location.href).pathname, newUrls[0]);
   });
 
-  it(`runs matcher with custom 'dwellTime'`, async () => {
-    type A = 'page' | 'section';
-    type B = string;
+  it(`runs matcher with default 'dwellTime'`, async () => {
+    const newUrls = ['/test', '/test/123', '/test/456'];
+    const routes: Record<'page' | 'section', RegExp> = {
+      page: /^\/test$/i,
+      section: /^\/test\/(?<test>[^\/]+)$/i,
+    };
 
-    const newUrls = ['/test', '/test/123'];
-    const expected: B = await browser.executeAsync(async (
-      a: string[],
-      b: string,
-      done
-    ) => {
-      const $w = window as unknown as Window;
-      const { appendLink, initObserver, waitForEvent } = $w.TestHelpers;
-      const routes: Record<A, RegExp> = {
-        page: /^\/test$/i,
-        section: /^\/test\/(?<test>[^\/]+)$/i,
-      };
+    init({
+      observerOption: {
+        /** Always push URL when 'dwellTime' < 0 */
+        dwellTime: -1,
+      },
+      routes: Object.values(routes),
+    });
 
-      initObserver({
-        routes: Object.values(routes),
-        observerOption: {
-          /** Always push URL when 'dwellTime' < 0 */
-          dwellTime: -1,
-        },
+    /** Push all URLs into history */
+    for (const { link, removeLink } of newUrls.map(n => appendLink(n))) {
+      await waitForEvent(pushStateEventKey, () => {
+        link.click();
       });
-      const links: AppendLinkResult[] = a.map(n => appendLink(n));
 
-      for (const { link, removeLink } of links) {
-        await waitForEvent(b, () => {
-          link.click();
-        });
+      removeLink();
+    }
 
-        removeLink();
+    /** Pop 2 URLs out of history */
+    for (const _ of '12') {
+      await waitForEvent('popstate', () => {
+        window.history.back();
+      });
+    }
+
+    assert.strictEqual(new URL(window.location.href).pathname, newUrls[0]);
+  });
+
+  it(`replaces history when URL changes are too frequent (< 'dwellTime')`, async () => {
+    const newUrls = ['/test', '/test/123', '/test/456'];
+    const routes: Record<'page' | 'section', RegExp> = {
+      page: /^\/test$/i,
+      section: /^\/test\/(?<test>[^\/]+)$/i,
+    };
+
+    init({
+      routes: Object.values(routes),
+    });
+
+    /** Push all URLs into history */
+    for (const [
+      ni,
+      { link, removeLink },
+    ] of newUrls.map<[number, AppendLinkResult]>((n, i) => [i, appendLink(n)])) {
+      await waitForEvent(pushStateEventKey, () => {
+        link.click();
+      });
+
+      /** Only wait for dwellTime after first URL */
+      if (!ni) {
+        await new Promise(y => window.setTimeout(y, 2e3));
       }
 
-      await waitForEvent('popstate', () => {
-        ($w as Window).history.back();
-      });
+      removeLink();
+    }
 
-      done($w.location.href);
-    }, newUrls, pushStateEventKey);
+    /** URLs after first URL should be replaced by the last URL */
+    await waitForEvent('popstate', () => {
+      window.history.back();
+    });
 
-    const url = new URL(expected);
-
-    expect(url.pathname).toStrictEqual(newUrls[0]);
+    assert.strictEqual(new URL(window.location.href).pathname, newUrls[0]);
   });
 
 });

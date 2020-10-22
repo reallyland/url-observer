@@ -1,76 +1,44 @@
-import type { URLObserver } from '../url-observer.js';
-import { HOST } from './config.js';
-import type { TriggerEventsEventName, TriggerEventsResult } from './test-helpers.js';
+import { assert } from '@esm-bundle/chai';
+
+import type { URLObserverWithDebug } from './custom_test_typings.js';
+import { initObserver } from './helpers/init-observer.js';
+import { TriggerEventListeners, triggerEvents, TriggerEventsEvents } from './helpers/trigger-event.js';
 
 describe('methods-disconnect', () => {
-  /** Always load the page to reset URL history */
-  beforeEach(async () => {
-    await browser.url(HOST);
-  });
+  const observers: Set<URLObserverWithDebug> = new Set();
+  const init = initObserver(observers);
 
-  afterEach(async () => {
-    await browser.executeAsync(async (done) => {
-      const obsList: URLObserver[] = window.observerList;
-
-      for (const obs of obsList) obs.disconnect();
-
-      done();
-    });
+  beforeEach(() => {
+    observers.forEach(n => n.disconnect());
+    observers.clear();
   });
 
   it(`disconnects`, async () => {
-    type A = TriggerEventsEventName;
-    type B = TriggerEventsResult;
-    type C = [B, number[]];
+    const events: TriggerEventsEvents = ['click', 'hashchange', 'popstate'];
+    const listeners: TriggerEventListeners = {};
+    const historyRecords: number[] = [];
+    const run = triggerEvents(listeners);
 
-    const expected: C = await browser.executeAsync(async (done) => {
-      const $w = window as unknown as Window;
-      const { initObserver, triggerEvents } = $w.TestHelpers;
-      const mergeListeners = (
-        la: B,
-        lb: B
-      ): B => {
-        return {
-          click: la.click.concat(lb.click),
-          hashchange: la.hashchange.concat(lb.hashchange),
-          popstate: la.popstate.concat(lb.popstate),
-        };
-      };
+    for (const n of events) {
+      const observer = init({
+        routes: [/^\/test/i],
+      });
 
-      const events: A[] = ['click', 'hashchange', 'popstate'];
-      const historyRecords: number[] = [];
+      await run(n);
 
-      let listeners: B = {
-        click: [],
-        hashchange: [],
-        popstate: [],
-      };
+      observer.disconnect();
 
-      for (const n of events) {
-        const observer = initObserver({
-          routes: [/^\/test/i],
-          observerOption: { debug: true },
-        });
+      await run(n, true);
 
-        listeners = mergeListeners(listeners, await triggerEvents(n));
+      historyRecords.push(observer.takeRecords().length);
+    }
 
-        observer.disconnect();
-        listeners = mergeListeners(listeners, await triggerEvents(n, true));
-
-        historyRecords.push(observer.takeRecords.length);
-      }
-
-      done([listeners, historyRecords]);
-    });
-
-    expect(expected).toEqual<C>([
-      {
-        click: ['click', null],
-        hashchange: ['hashchange', null],
-        popstate: ['popstate', null],
-      },
-      [0, 0, 0],
-    ]);
+    assert.deepStrictEqual(listeners, {
+      click: ['click', null],
+      hashchange: ['hashchange', null],
+      popstate: ['popstate', null],
+    } as TriggerEventListeners);
+    assert.deepStrictEqual(historyRecords, [0, 0, 0]);
   });
 
 });

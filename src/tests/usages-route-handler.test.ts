@@ -1,84 +1,73 @@
+import { assert } from '@esm-bundle/chai';
+
 import { pushStateEventKey } from '../constants.js';
-import type { RouteEvent, URLChangedStatus } from '../custom_typings.js';
-import type { URLObserver } from '../url-observer.js';
-import { HOST } from './config.js';
+import type { URLChangedStatus } from '../custom_typings.js';
+import type { URLObserverWithDebug } from './custom_test_typings.js';
+import { appendLink } from './helpers/append-link.js';
+import { initObserver } from './helpers/init-observer.js';
+import { waitForEvent } from './helpers/wait-for-event.js';
+import { pageClick } from './wtr-helpers/page-click.js';
 
 describe('usages-route-handler', () => {
-  /** Always load the page to reset URL history */
-  beforeEach(async () => {
-    await browser.url(HOST);
-  });
+  const observers: Set<URLObserverWithDebug> = new Set();
+  const init = initObserver(observers);
+  const routes: Record<'section' | 'test', RegExp> = {
+    section: /^\/test\/(?<test>[^\/]+)$/i,
+    test: /^\/test$/i,
+  };
 
-  afterEach(async () => {
-    await browser.executeAsync(async (done) => {
-      const obsList: URLObserver[] = window.observerList;
+  const originalUrl = window.location.href;
 
-      for (const obs of obsList) obs.disconnect();
+  beforeEach(() => {
+    observers.forEach(n => n.disconnect());
+    observers.clear();
 
-      done();
-    });
+    window.history.replaceState({}, '', originalUrl);
   });
 
   it(`runs before route handler on manual history update`, async () => {
-    type A = Record<'test' | 'section', RegExp>;
-    type B = [string, string][];
-    type C = [B, URLChangedStatus[]];
+    type A = [string, string][];
 
-    const testOptions: B = [
+    const newUrlOptions: A = [
       ['/test/123', ':default'],
-      ['/test/456', 'test-1'],
+      ['/test/456', ':test-1'],
     ];
-    const expected: C = await browser.executeAsync(async (
-      a: B,
-      b: string,
-      done
-    ) => {
-      const $w = window as unknown as Window;
-      const { initObserver, waitForEvent } = $w.TestHelpers;
-      const routes: A = {
-        test: /^\/test$/i,
-        section: /^\/test\/(?<test>[^\/]+)$/i,
-      };
 
-      const observer = initObserver({ routes: Object.values(routes) });
-      const result: B = [];
+    const observer = init({
+      routes: Object.values(routes),
+    });
 
-      for (const [urlPath, testScope] of a) {
-        observer.add({
-          pathRegExp: routes.section,
-          handleEvent: () => {
-            result.push([urlPath, testScope]);
-            return true;
-          },
-          scope: testScope,
-        });
+    const result: A = [];
 
-        await waitForEvent<CustomEvent<RouteEvent>>(b, async () => {
-          await observer.updateHistory(urlPath, testScope);
-        });
-      }
+    for (const [newUrl, newUrlScope] of newUrlOptions) {
+      observer.add({
+        pathRegExp: routes.section,
+        handleEvent() {
+          result.push([newUrl, newUrlScope]);
+          return true;
+        },
+        scope: newUrlScope,
+      });
 
-      done([
-        result,
-        observer.takeRecords().map(n => n.entryType),
-      ]);
-    }, testOptions, pushStateEventKey);
+      await waitForEvent(pushStateEventKey, async () => {
+        await observer.updateHistory(newUrl, newUrlScope);
+      });
+    }
 
-    expect(expected).toStrictEqual<C>([
-      testOptions,
+    assert.deepStrictEqual(result, newUrlOptions);
+    assert.deepStrictEqual<URLChangedStatus[]>(
+      observer.takeRecords().map(n => n.entryType),
       [
         'init',
-        ...Array.from<unknown, URLChangedStatus>(Array(testOptions.length), () => 'manual'),
-      ],
-    ]);
+        ...Array.from<unknown, URLChangedStatus>(Array(newUrlOptions.length), () => 'manual'),
+      ]
+    );
   });
 
   it(`runs before route handler on link click`, async () => {
-    type A = Record<'test' | 'section', RegExp>;
-    type B = [string, Record<string, string>][];
-    type C = [B, URLChangedStatus[]];
+    type A = [string, Record<string, string>][];
 
-    const testOptions: B = [
+    const newUrlOptions: A = [
       ['/test/123', { scope: ':default' }],
       ['/test/123a', { scope: '' }],
       ['/test/456', { ['.scope']: ':default' }],
@@ -86,183 +75,138 @@ describe('usages-route-handler', () => {
       ['/test/789', { scope: 'test-1' }],
       ['/test/789a', { ['.scope']: 'test-1' }],
     ];
-    const expected: C = await browser.executeAsync(async (
-      a: B,
-      b: string,
-      done
-    ) => {
-      const $w = window as unknown as Window;
-      const { appendLink, initObserver, waitForEvent } = $w.TestHelpers;
-      const routes: A = {
-        test: /^\/test$/i,
-        section: /^\/test\/(?<test>[^\/]+)$/i,
-      };
 
-      const observer = initObserver({ routes: Object.values(routes) });
-      const result: B = [];
+    const observer = init({
+      routes: Object.values(routes),
+    });
 
-      for (const [urlPath, testScope] of a) {
-        const { link, removeLink } = appendLink(urlPath, testScope);
+    const result: A = [];
+    for (const [newUrl, newUrlScope] of newUrlOptions) {
+      const { removeLink } = appendLink(newUrl, newUrlScope);
 
-        observer.add({
-          pathRegExp: routes.section,
-          handleEvent: () => {
-            result.push([urlPath, testScope]);
-            return true;
-          },
-          scope: testScope.scope || testScope['.scope'],
+      observer.add({
+        pathRegExp: routes.section,
+        handleEvent() {
+          result.push([newUrl, newUrlScope]);
+          return true;
+        },
+        scope: newUrlScope?.scope ?? newUrlScope?.['.scope'],
+      });
+
+      await waitForEvent(pushStateEventKey, async () => {
+        await pageClick(`a[href="${newUrl}"]`, {
+          button: 'left',
         });
+      });
 
-        await waitForEvent<CustomEvent<RouteEvent>>(b, async () => {
-          link.click();
-        });
+      removeLink();
+    }
 
-        removeLink();
-      }
-
-      done([
-        result,
-        observer.takeRecords().map(n => n.entryType),
-      ]);
-    }, testOptions, pushStateEventKey);
-
-    expect(expected).toStrictEqual<C>([
-      testOptions,
+    assert.deepStrictEqual(result, newUrlOptions);
+    assert.deepStrictEqual<URLChangedStatus[]>(
+      observer.takeRecords().map(n => n.entryType),
       [
         'init',
-        ...Array.from<unknown, URLChangedStatus>(Array(testOptions.length), () => 'click'),
-      ],
-    ]);
+        ...Array.from<unknown, URLChangedStatus>(Array(newUrlOptions.length), () => 'click'),
+      ]
+    );
   });
 
   it(
-    `does not run before route handler without defined scope on manual history update`,
+    `does not run before route handler when updating history manually without defined scope`,
     async () => {
-      type A = Record<'test' | 'section', RegExp>;
-      type B = [string, string | undefined][];
-      type C = [B, URLChangedStatus[]];
+      type A = [string, string | undefined][];
 
-      const testOptions: B = [
+      const newUrlOptions: A = [
         ['/test/123', ''],
         ['/test/456', undefined],
       ];
-      const expected: C = await browser.executeAsync(async (
-        a: B,
-        b: string,
-        done
-      ) => {
-        const $w = window as unknown as Window;
-        const { initObserver, waitForEvent } = $w.TestHelpers;
-        const routes: A = {
-          test: /^\/test$/i,
-          section: /^\/test\/(?<test>[^\/]+)$/i,
-        };
 
-        const observer = initObserver({ routes: Object.values(routes) });
-        const result: B = [];
+      const observer = init({
+        routes: Object.values(routes),
+      });
 
-        for (const [urlPath, testScope] of a) {
-          observer.add({
-            pathRegExp: routes.section,
-            handleEvent: () => {
-              result.push([urlPath, testScope]);
-              return true;
-            },
-            scope: testScope,
-          });
+      const result: A = [];
+      for (const [newUrl, newUrlScope] of newUrlOptions) {
+        observer.add({
+          pathRegExp: routes.section,
+          handleEvent() {
+            result.push([newUrl, newUrlScope]);
+            return true;
+          },
+          scope: newUrlScope,
+        });
 
-          await waitForEvent<CustomEvent<RouteEvent>>(b, async () => {
-            if (testScope == null) {
-              await observer.updateHistory(urlPath);
-            } else {
-              await observer.updateHistory(urlPath, testScope);
-            }
-          });
-        }
+        await waitForEvent(pushStateEventKey, async () => {
+          await observer.updateHistory(newUrl, newUrlScope);
+        });
+      }
 
-        done([
-          result,
-          observer.takeRecords().map(n => n.entryType),
-        ]);
-      }, testOptions, pushStateEventKey);
-
-      expect(expected).toStrictEqual<C>([
-        [],
+      assert.deepStrictEqual(result, []);
+      assert.deepStrictEqual<URLChangedStatus[]>(
+        observer.takeRecords().map(n => n.entryType),
         [
           'init',
-          ...Array.from<unknown, URLChangedStatus>(Array(testOptions.length), () => 'manual'),
-        ],
-      ]);
+          ...Array.from<unknown, URLChangedStatus>(Array(newUrlOptions.length), () => 'manual'),
+        ]
+      );
     }
   );
 
-  it(`does not run before route handler without defined scope on link click`, async () => {
-    type A = Record<'test' | 'section', RegExp>;
-    type B = [string, string][];
-    type C = [B, URLChangedStatus[]];
+  it(
+    `does not run before route handler when clicking on link without defined scope`,
+    async () => {
+      type A = [string, string][];
 
-    const testOptions: B = [
-      ['/test/123', ''],
-      ['/test/456', ':default'],
-      ['/test/789', 'test-1'],
-    ];
-    const expected: C = await browser.executeAsync(async (
-      a: B,
-      b: string,
-      done
-    ) => {
-      const $w = window as unknown as Window;
-      const { appendLink, initObserver, waitForEvent } = $w.TestHelpers;
-      const routes: A = {
-        test: /^\/test$/i,
-        section: /^\/test\/(?<test>[^\/]+)$/i,
-      };
+      const newUrlOptions: A = [
+        ['/test/123', ''],
+        ['/test/456', ':default'],
+        ['/test/789', 'test-1'],
+      ];
 
-      const observer = initObserver({ routes: Object.values(routes) });
-      const result: B = [];
+      const observer = init({
+        routes: Object.values(routes),
+      });
 
-      for (const [urlPath, testScope] of a) {
-        const { link, removeLink } = appendLink(urlPath);
+      const result: A = [];
+      for (const [newUrl, newUrlScope] of newUrlOptions) {
+        const { removeLink } = appendLink(newUrl);
 
         observer.add({
           pathRegExp: routes.section,
-          handleEvent: () => {
-            result.push([urlPath, testScope]);
+          handleEvent() {
+            result.push([newUrl, newUrlScope]);
             return true;
           },
-          scope: testScope,
+          scope: newUrlScope,
         });
 
-        await waitForEvent<CustomEvent<RouteEvent>>(b, async () => {
-          link.click();
+        await waitForEvent(pushStateEventKey, async () => {
+          await pageClick(`a[href="${newUrl}"]`, {
+            button: 'left',
+          });
         });
 
         removeLink();
       }
 
-      done([
-        result,
+      assert.deepStrictEqual(result, []);
+      assert.deepStrictEqual<URLChangedStatus[]>(
         observer.takeRecords().map(n => n.entryType),
-      ]);
-    }, testOptions, pushStateEventKey);
-
-    expect(expected).toStrictEqual<C>([
-      [],
-      [
-        'init',
-        ...Array.from<unknown, URLChangedStatus>(Array(testOptions.length), () => 'click'),
-      ],
-    ]);
-  });
+        [
+          'init',
+          ...Array.from<unknown, URLChangedStatus>(Array(newUrlOptions.length), () => 'click'),
+        ]
+      );
+    }
+  );
 
   it(
-    `does not run update history as a result of before route handler on link click`,
-    async function t() {
-      type A = Record<'test' | 'section', RegExp>;
-      type B = [string, Record<string, string>][];
-      type C = [B, string[], URLChangedStatus[]];
+    `does not run update history when before route handler return false after clicking a link`,
+    async () => {
+      type A = [string, Record<string, string>];
 
-      const testOptions: B = [
+      const newUrlOptions: A[] = [
         ['/test/123', { scope: ':default' }],
         ['/test/123a', { scope: '' }],
         ['/test/456', { ['.scope']: ':default' }],
@@ -271,127 +215,92 @@ describe('usages-route-handler', () => {
         ['/test/789a', { ['.scope']: 'test-1' }],
       ];
 
-      this.timeout(testOptions.length * 10e3);
+      const observer = init({
+        routes: Object.values(routes),
+      });
 
-      const expected: C = await browser.executeAsync(async (
-        a: B,
-        b: string,
-        done
-      ) => {
-        const $w = window as unknown as Window;
-        const { appendLink, initObserver, waitForEvent } = $w.TestHelpers;
-        const history: string[] = [];
-        const result: B = [];
-        const routes: A = {
-          test: /^\/test$/i,
-          section: /^\/test\/(?<test>[^\/]+)$/i,
-        };
+      const result: A[] = [];
+      for (const [newUrl, newUrlScope] of newUrlOptions) {
+        const { removeLink } = appendLink(newUrl, newUrlScope);
 
-        const observer = initObserver({ routes: Object.values(routes) });
+        let temp: A = ['', {}];
 
-        for (const [urlPath, testScope] of a) {
-          const { link, removeLink } = appendLink(urlPath, testScope);
-          let temp: B[number] = ['nil', { scope: 'nil' }];
+        observer.add({
+          pathRegExp: routes.section,
+          handleEvent() {
+            temp = [newUrl, newUrlScope];
 
-          observer.add({
-            pathRegExp: routes.section,
-            handleEvent: () => {
-              temp = [urlPath, testScope];
+            return false;
+          },
+          scope: newUrlScope.scope ?? newUrlScope?.['.scope'],
+        });
 
-              /** Return false to not update history */
-              return false;
-            },
-            scope: testScope.scope || testScope['.scope'],
+        const ev = await waitForEvent(pushStateEventKey, async () => {
+          await pageClick(`a[href="${newUrl}"]`, {
+            button: 'left',
           });
+        });
 
-          const ev = await waitForEvent<CustomEvent<RouteEvent>>(b, async () => {
-            link.click();
-          });
+        removeLink();
 
-          removeLink();
+        if (ev) result.push(temp);
+      }
 
-          if (ev) result.push(temp);
-
-          history.push($w.location.pathname);
-        }
-
-        done([
-          result,
-          history,
-          observer.takeRecords().map(n => n.entryType),
-        ]);
-      }, testOptions, pushStateEventKey);
-
-      expect(expected).toStrictEqual<C>([
-        [],
-        Array.from(Array(testOptions.length), () => '/test.html'),
-        ['init'],
-      ]);
+      assert.deepStrictEqual(result, []);
+      assert.deepStrictEqual<URLChangedStatus[]>(
+        observer.takeRecords().map(n => n.entryType),
+        ['init']
+      );
     }
   );
 
   it(
-    `does not run update history as a result of before route handler on manual history update`,
+    `does not update history when before route handler returns false on manual history update`,
     async () => {
-      type A = Record<'test' | 'section', RegExp>;
-      type B = [string, string][];
-      type C = [B, string[], URLChangedStatus[]];
+      type A = [string, string];
 
-      const testOptions: B = [
+      const newUrlOptions: A[] = [
         ['/test/123', ':default'],
         ['/test/456', 'test-1'],
       ];
-      const expected: C = await browser.executeAsync(async (
-        a: B,
-        b: string,
-        done
-      ) => {
-        const $w = window as unknown as Window;
-        const { initObserver, waitForEvent } = $w.TestHelpers;
-        const history: string[] = [];
-        const result: B = [];
-        const routes: A = {
-          test: /^\/test$/i,
-          section: /^\/test\/(?<test>[^\/]+)$/i,
-        };
 
-        const observer = initObserver({ routes: Object.values(routes) });
+      const observer = init({
+        routes: Object.values(routes),
+      });
 
-        for (const [urlPath, testScope] of a) {
-          let temp: B[number] = ['nil', 'nil'];
+      const historyRecords: string[] = [];
+      const result: A[] = [];
+      for (const [newUrl, newUrlScope] of newUrlOptions) {
+        let temp: A = ['', ''];
 
-          observer.add({
-            pathRegExp: routes.section,
-            handleEvent: () => {
-              temp = [urlPath, testScope];
+        observer.add({
+          pathRegExp: routes.section,
+          handleEvent() {
+            temp = [newUrl, newUrlScope];
 
-              /** Return false to not update history */
-              return false;
-            },
-            scope: testScope,
-          });
+            return false;
+          },
+          scope: newUrlScope,
+        });
 
-          const ev = await waitForEvent<CustomEvent<RouteEvent>>(b, async () => {
-            await observer.updateHistory(urlPath, testScope);
-          });
+        const ev = await waitForEvent(pushStateEventKey, async () => {
+          await observer.updateHistory(newUrl, newUrlScope);
+        });
 
-          if (ev) result.push(temp);
+        if (ev) result.push(temp);
 
-          history.push($w.location.pathname);
-        }
+        historyRecords.push(window.location.pathname);
+      }
 
-        done([
-          result,
-          history,
-          observer.takeRecords().map(n => n.entryType),
-        ]);
-      }, testOptions, pushStateEventKey);
-
-      expect(expected).toStrictEqual<C>([
-        [],
-        Array.from(Array(testOptions.length), () => '/test.html'),
-        ['init'],
-      ]);
+      assert.deepStrictEqual(result, []);
+      assert.deepStrictEqual(
+        historyRecords,
+        Array.from<unknown, string>(Array(newUrlOptions.length), () => '/')
+      );
+      assert.deepStrictEqual<URLChangedStatus[]>(
+        observer.takeRecords().map(n => n.entryType),
+        ['init']
+      );
     }
   );
 

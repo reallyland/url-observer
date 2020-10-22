@@ -255,7 +255,7 @@ export class URLObserver {
       scope,
       status,
       url,
-    } = option;
+    } = option ?? {};
     const fullUrl = url.href;
     const now = $w.performance.now();
     /**

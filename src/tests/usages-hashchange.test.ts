@@ -1,60 +1,44 @@
+import { assert } from '@esm-bundle/chai';
+
 import { pushStateEventKey } from '../constants.js';
 import type { URLChangedStatus } from '../custom_typings.js';
-import type { URLObserver } from '../url-observer.js';
-import { HOST } from './config.js';
+import type { URLObserverWithDebug } from './custom_test_typings.js';
+import { initObserver } from './helpers/init-observer.js';
+import { waitForEvent } from './helpers/wait-for-event.js';
 
 describe('usages-hashchange', () => {
-  /** Always load the page to reset URL history */
-  beforeEach(async () => {
-    await browser.url(HOST);
-  });
+  const observers: Set<URLObserverWithDebug> = new Set();
+  const init = initObserver(observers);
+  const routes: Record<'section' | 'test', RegExp> = {
+    section: /^\/test\/(?<test>[^\/]+)$/i,
+    test: /^\/test$/i,
+  };
 
-  afterEach(async () => {
-    await browser.executeAsync(async (done) => {
-      const obsList: URLObserver[] = window.observerList;
+  beforeEach(() => {
+    observers.forEach(n => n.disconnect());
+    observers.clear();
 
-      for (const obs of obsList) obs.disconnect();
-
-      done();
-    });
+    /** Replace current URL to root path after each test */
+    window.history.replaceState({}, '', '/');
   });
 
   it(`tracks URL changes via hashchange`, async () => {
-    type A = Record<'test' | 'section', RegExp>;
-    type B = URLChangedStatus[];
-    type C = [string, B];
-
     const newHash = '#123';
-    const expected: C = await browser.executeAsync(async (
-      a: string,
-      b: string,
-      done
-    ) => {
-      const $w = window as unknown as Window;
-      const { initObserver, waitForEvent } = $w.TestHelpers;
-      const routes: A = {
-        test: /^\/test$/i,
-        section: /^\/test\/(?<test>[^\/]+)$/i,
-      };
 
-      const observer = initObserver({ routes: Object.values(routes) });
+    const observer = init({
+      routes: Object.values(routes),
+    });
 
-      await waitForEvent(b, () => {
-        $w.location.hash = a;
-      });
+    await waitForEvent(pushStateEventKey, () => {
+      window.location.hash = newHash;
+    });
 
-      const { pathname, hash } = $w.location;
-
-      done([
-        [pathname, hash].join(''),
-        observer.takeRecords().map(n => n.entryType),
-      ]);
-    }, newHash, pushStateEventKey);
-
-    expect(expected).toStrictEqual<C>([
-      '/test.html#123',
-      ['init', 'popstate', 'hashchange'],
-    ]);
+    assert.strictEqual(window.location.pathname, '/');
+    assert.strictEqual(window.location.hash, newHash);
+    assert.deepStrictEqual<URLChangedStatus[]>(
+      observer.takeRecords().map(n => n.entryType),
+      ['init', 'popstate', 'hashchange']
+    );
   });
 
 });
