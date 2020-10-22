@@ -1,7 +1,7 @@
 import { assert } from '@esm-bundle/chai';
+
 import { pushStateEventKey } from '../constants.js';
 import type { URLChangedStatus } from '../custom_typings.js';
-
 import type { URLObserverWithDebug } from './custom_test_typings.js';
 import { appendElement } from './helpers/append-element.js';
 import { appendLink } from './helpers/append-link.js';
@@ -19,12 +19,14 @@ describe('usages-click', () => {
     test: /^\/test$/i,
   };
 
+  const originalUrl = window.location.href;
+
   beforeEach(() => {
     observers.forEach(n => n.disconnect());
     observers.clear();
 
     /** Replace current URL to root path after each test */
-    window.history.replaceState({}, '', '/');
+    window.history.replaceState({}, '', originalUrl);
   });
 
   it(`does not intercept click when <click>.defaultPrevented=true`, async () => {
