@@ -3,7 +3,7 @@ import { assert } from '@esm-bundle/chai';
 import type { URLChangedStatus } from '../custom_typings.js';
 import type { URLObserverWithDebug } from './custom_test_typings.js';
 import { initObserver } from './helpers/init-observer.js';
-import { TriggerEventListeners, triggerEvents, TriggerEventsEvents } from './helpers/trigger-event.js';
+import { TriggerEventListeners, triggerEvents } from './helpers/trigger-event.js';
 
 describe('methods-take-records', () => {
   const observers: Set<URLObserverWithDebug> = new Set();

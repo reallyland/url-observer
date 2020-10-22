@@ -74,6 +74,7 @@
     "@material/mwc-dialog": "^0.19.1",
     "@reallyland/tsconfig": "^2.0.0",
     "@reallyland/tslint-config": "^1.1.1",
+    "@types/koa": "^2.11.6",
     "@web/dev-server-esbuild": "^0.2.6",
     "@web/test-runner": "^0.9.4",
     "@web/test-runner-mocha": "^0.5.1",
