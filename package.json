@@ -50,15 +50,17 @@
     "//test:sl:dev": "node --trace-deprecation run-server.js --config-file dist/tests/wdio.sl.config.js",
     "build": "tsc -p tsconfig.prod.json",
     "build:config": "tsc -p tsconfig.wdio.json",
+    "check": "package-check",
     "clean": "shx rm -rf .*cache *.log dist/ logs/",
     "lint": "npm run lint:debug -- --config tslint.prod.json",
     "lint:debug": "tslint --project tsconfig.json --format stylish",
     "prepublishOnly": "npm run clean && npm run lint && npm run build",
     "serve": "es-dev-server --app-index=demo.html --dedupe-modules --node-resolve --port=3000 --watch --compatibility=none",
     "serve:compile": "es-dev-server --app-index=demo.html --dedupe-modules --node-resolve --port=3000 --watch --compatibility=none --babel --babel-config=babel.config.json",
-    "test": "node --max-old-space-size=8192 node_modules/@web/test-runner/dist/bin.js",
+    "test": "wtr",
     "ts": "tsc",
-    "watch": "npm run clean && tsc --watch"
+    "watch": "wtr --watch",
+    "wtr": "node --max-old-space-size=8192 node_modules/@web/test-runner/dist/bin.js"
   },
   "husky": {
     "hooks": {
@@ -74,6 +76,7 @@
     "@material/mwc-dialog": "^0.19.1",
     "@reallyland/tsconfig": "^2.0.0",
     "@reallyland/tslint-config": "^1.1.1",
+    "@skypack/package-check": "^0.1.0",
     "@types/koa": "^2.11.6",
     "@web/dev-server-esbuild": "^0.2.6",
     "@web/test-runner": "^0.9.4",

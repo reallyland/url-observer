@@ -2,24 +2,21 @@ import { assert } from '@esm-bundle/chai';
 
 import { pushStateEventKey } from '../constants.js';
 import type { URLChangedStatus } from '../custom_typings.js';
+import { routes } from './config.js';
 import type { URLObserverWithDebug } from './custom_test_typings.js';
+import { historyFixture } from './helpers/history-fixture.js';
 import { initObserver } from './helpers/init-observer.js';
 import { waitForEvent } from './helpers/wait-for-event.js';
 
 describe('usages-hashchange', () => {
   const observers: Set<URLObserverWithDebug> = new Set();
   const init = initObserver(observers);
-  const routes: Record<'section' | 'test', RegExp> = {
-    section: /^\/test\/(?<test>[^\/]+)$/i,
-    test: /^\/test$/i,
-  };
+  const restoreHistory = historyFixture();
 
   beforeEach(() => {
     observers.forEach(n => n.disconnect());
     observers.clear();
-
-    /** Replace current URL to root path after each test */
-    window.history.replaceState({}, '', '/');
+    restoreHistory();
   });
 
   it(`tracks URL changes via hashchange`, async () => {

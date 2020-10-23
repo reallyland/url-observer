@@ -1,16 +1,20 @@
 import { assert } from '@esm-bundle/chai';
 
+import { routes } from './config.js';
 import type { URLObserverWithDebug } from './custom_test_typings.js';
+import { historyFixture } from './helpers/history-fixture.js';
 import { initObserver } from './helpers/init-observer.js';
 import { TriggerEventListeners, triggerEvents, TriggerEventsEvents } from './helpers/trigger-event.js';
 
 describe('methods-disconnect', () => {
   const observers: Set<URLObserverWithDebug> = new Set();
   const init = initObserver(observers);
+  const restoreHistory = historyFixture();
 
   beforeEach(() => {
     observers.forEach(n => n.disconnect());
     observers.clear();
+    restoreHistory();
   });
 
   it(`disconnects`, async () => {
@@ -21,7 +25,7 @@ describe('methods-disconnect', () => {
 
     for (const n of events) {
       const observer = init({
-        routes: [/^\/test/i],
+        routes: [routes.test],
       });
 
       await run(n);

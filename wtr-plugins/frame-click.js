@@ -17,9 +17,20 @@ export function frameClickPlugin() {
       const { options, selector, name, url } = payload ?? {};
 
       try {
-        await page.frame({ name, url })?.click(selector, options);
+        const el = await page.frame({ url, name }).$(selector);
+
+        if (el == null) return false;
+
+        await el.click(options);
+
+        /**
+         * FIXME: The following code does not work as reliably.
+         */
+        // await page.frame({ name, url })?.click(selector, options);
+
         return true;
-      } catch {
+      } catch (e) {
+        console.error(new Date().toJSON(), session.browser.name, e);
         return false;
       }
     },

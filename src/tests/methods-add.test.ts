@@ -1,16 +1,20 @@
 import { assert } from '@esm-bundle/chai';
 
+import { routes } from './config.js';
 import type { URLObserverWithDebug } from './custom_test_typings.js';
+import { historyFixture } from './helpers/history-fixture.js';
 import { initObserver } from './helpers/init-observer.js';
 import { toResult } from './helpers/to-result.js';
 
 describe('methods-add', () => {
   const observers: Set<URLObserverWithDebug> = new Set();
   const init = initObserver(observers);
+  const restoreHistory = historyFixture();
 
-  afterEach(() => {
+  beforeEach(() => {
     observers.forEach(n => n.disconnect());
     observers.clear();
+    restoreHistory();
   });
 
   it(`adds first route`, () => {
@@ -21,13 +25,13 @@ describe('methods-add', () => {
     });
 
     observer.add({
-      pathRegExp: /^\/test/i,
+      pathRegExp: routes.test,
     });
 
     const result: A[] = toResult<A>(observer.routes, h => !h.size);
 
     assert.deepStrictEqual(result, [
-      ['/^\\/test/i', true],
+      ['/^\\/test$/i', true],
     ]);
   });
 
@@ -40,13 +44,13 @@ describe('methods-add', () => {
 
     observer.add({
       handleEvent() { return true; },
-      pathRegExp: /^\/test/i,
+      pathRegExp: routes.test,
     });
 
     const result: A[] = toResult<A>(observer.routes, h => h.has(':default'));
 
     assert.deepStrictEqual(result, [
-      ['/^\\/test/i', true],
+      ['/^\\/test$/i', true],
     ]);
   });
 
@@ -62,14 +66,14 @@ describe('methods-add', () => {
       handleEvent() {
         return true;
       },
-      pathRegExp: /^\/test/i,
+      pathRegExp: routes.test,
       scope: scopeName,
     });
 
     const result: A[] = toResult<A>(observer.routes, h => h.has(scopeName));
 
     assert.deepStrictEqual(result, [
-      ['/^\\/test/i', true],
+      ['/^\\/test$/i', true],
     ]);
   });
 
@@ -77,7 +81,7 @@ describe('methods-add', () => {
     type A = [string, boolean];
 
     const observer = init({
-      routes: [/^\/test/i],
+      routes: [routes.test],
     });
 
     observer.add({
@@ -87,7 +91,7 @@ describe('methods-add', () => {
     const result: A[] = toResult<A>(observer.routes, h => !h.size);
 
     assert.deepStrictEqual(result, [
-      ['/^\\/test/i', true],
+      ['/^\\/test$/i', true],
       ['/^\\/test1/i', true],
     ]);
   });
@@ -96,17 +100,17 @@ describe('methods-add', () => {
     type A = [string, boolean];
 
     const observer = init({
-      routes: [/^\/test/i],
+      routes: [routes.test],
     });
 
     observer.add({
-      pathRegExp: /^\/test/i,
+      pathRegExp: routes.test,
     });
 
     const result: A[] = toResult<A>(observer.routes, h => !h.size);
 
     assert.deepStrictEqual(result, [
-      ['/^\\/test/i', true],
+      ['/^\\/test$/i', true],
     ]);
   });
 
@@ -114,23 +118,23 @@ describe('methods-add', () => {
     type A = [string, boolean];
 
     const observer = init({
-      routes: [/^\/test/i],
+      routes: [routes.test],
     });
 
     observer.add({
       handleEvent() {
         return true;
       },
-      pathRegExp: /^\/test/i,
+      pathRegExp: routes.test,
     });
     observer.add({
-      pathRegExp: /^\/test/i,
+      pathRegExp: routes.test,
     });
 
     const result: A[] = toResult<A>(observer.routes, h => h.size === 1 && h.has(':default'));
 
     assert.deepStrictEqual(result, [
-      ['/^\\/test/i', true],
+      ['/^\\/test$/i', true],
     ]);
   });
 
@@ -140,7 +144,7 @@ describe('methods-add', () => {
       type A = [string, boolean];
 
       const observer = init({
-        routes: [/^\/test/i],
+        routes: [routes.test],
       });
       const scopeName = ':test';
 
@@ -148,14 +152,14 @@ describe('methods-add', () => {
         handleEvent() {
           return true;
         },
-        pathRegExp: /^\/test/i,
+        pathRegExp: routes.test,
         scope: scopeName,
       });
       observer.add({
         handleEvent() {
           return true;
         },
-        pathRegExp: /^\/test/i,
+        pathRegExp: routes.test,
       });
 
       const result: A[] = toResult<A>(
@@ -164,7 +168,7 @@ describe('methods-add', () => {
       );
 
       assert.deepStrictEqual(result, [
-        ['/^\\/test/i', true],
+        ['/^\\/test$/i', true],
       ]);
     }
   );

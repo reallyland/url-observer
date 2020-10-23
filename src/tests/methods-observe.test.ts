@@ -1,7 +1,9 @@
 import { assert } from '@esm-bundle/chai';
 
 import type { URLChangedStatus } from '../custom_typings.js';
+import { routes } from './config.js';
 import type { URLObserverWithDebug } from './custom_test_typings.js';
+import { historyFixture } from './helpers/history-fixture.js';
 import { initObserver } from './helpers/init-observer.js';
 import { toResult } from './helpers/to-result.js';
 import { TriggerEventListeners, triggerEvents, TriggerEventsEvents } from './helpers/trigger-event.js';
@@ -9,23 +11,25 @@ import { TriggerEventListeners, triggerEvents, TriggerEventsEvents } from './hel
 describe('methods-observe', () => {
   const observers: Set<URLObserverWithDebug> = new Set();
   const init = initObserver(observers);
+  const restoreHistory = historyFixture();
 
   beforeEach(() => {
     observers.forEach(n => n.disconnect());
     observers.clear();
+    restoreHistory();
   });
 
   it(`observes URL changes with routes`, () => {
     type A = [string, boolean];
 
     const observer = init({
-      routes: [/^\/test/i],
+      routes: [routes.test],
     });
 
     const result = toResult<A>(observer.routes, h => !h.size);
 
     assert.deepStrictEqual(result, [
-      ['/^\\/test/i', true],
+      ['/^\\/test$/i', true],
     ]);
   });
 
@@ -40,11 +44,12 @@ describe('methods-observe', () => {
   it(`adds 'init' as first record when .observe() is called`, () => {
     const observer = init();
 
-    observer.observe([/^\/test$/i]);
+    observer.observe([routes.test]);
 
     assert.deepStrictEqual(observer.takeRecords().map(n => n.entryType), ['init']);
   });
 
+  // FIXME: Potential slowdown
   it(`observes URL changes`, async () => {
     const eventNames: TriggerEventsEvents = ['click', 'hashchange', 'popstate'];
     const listeners: TriggerEventListeners = {};
@@ -55,7 +60,7 @@ describe('methods-observe', () => {
       await run(n, true);
     }
 
-    observer.observe([/^\/test$/i]);
+    observer.observe([routes.test]);
 
     for (const n of eventNames) {
       await run(n);

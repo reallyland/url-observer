@@ -63,16 +63,10 @@ jobs:
         run: |
           npm run lint
 
-      # - name: Build
-      #   if: "env.CI_SKIP == 'false'"
-      #   run: |
-      #     npm run ts && npm run build:config
-
-      # - name: Check build
-      #   if: "env.CI_SKIP == 'false'"
-      #   shell: bash
-      #   run: |
-      #     pwd && ls -la
+      - name: Package check
+        if: "env.CI_SKIP == 'false'"
+        run: |
+          npm run check
 
       - name: Run Test
         if: "env.CI_SKIP == 'false'"

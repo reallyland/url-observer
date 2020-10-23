@@ -1,7 +1,8 @@
 import { assert } from '@esm-bundle/chai';
+
 import { pushStateEventKey } from '../constants.js';
 import type { URLChangedStatus } from '../custom_typings.js';
-
+import { routes } from './config.js';
 import type { URLObserverWithDebug } from './custom_test_typings.js';
 import { appendLink } from './helpers/append-link.js';
 import { HistoryMock, MockRecord } from './helpers/history-mock.js';
@@ -12,10 +13,6 @@ import { pageClick } from './wtr-helpers/page-click.js';
 describe('usages-history', () => {
   const observers: Set<URLObserverWithDebug> = new Set();
   const init = initObserver(observers);
-  const routes: Record<'section' | 'test', RegExp> = {
-    section: /^\/test\/(?<test>[^\/]+)$/i,
-    test: /^\/test$/i,
-  };
 
   let historyMock: HistoryMock;
 

@@ -2,10 +2,12 @@ import { assert } from '@esm-bundle/chai';
 
 import { pushStateEventKey } from '../constants.js';
 import type { URLChangedStatus } from '../custom_typings.js';
+import { routes } from './config.js';
 import type { URLObserverWithDebug } from './custom_test_typings.js';
 import { appendElement } from './helpers/append-element.js';
 import { appendLink } from './helpers/append-link.js';
 import { appendShadowElement } from './helpers/append-shadow-element.js';
+import { historyFixture } from './helpers/history-fixture.js';
 import { initObserver } from './helpers/init-observer.js';
 import { waitForEvent } from './helpers/wait-for-event.js';
 import { frameClick } from './wtr-helpers/frame-click.js';
@@ -14,19 +16,12 @@ import { pageClick } from './wtr-helpers/page-click.js';
 describe('usages-click', () => {
   const observers: Set<URLObserverWithDebug> = new Set();
   const init = initObserver(observers);
-  const routes: Record<'section' | 'test', RegExp> = {
-    section: /^\/test\/(?<test>[^\/]+)$/i,
-    test: /^\/test$/i,
-  };
-
-  const originalUrl = window.location.href;
+  const restoreHistory = historyFixture();
 
   beforeEach(() => {
     observers.forEach(n => n.disconnect());
     observers.clear();
-
-    /** Replace current URL to root path after each test */
-    window.history.replaceState({}, '', originalUrl);
+    restoreHistory();
   });
 
   it(`does not intercept click when <click>.defaultPrevented=true`, async () => {
@@ -43,7 +38,11 @@ describe('usages-click', () => {
       result.push(null);
     });
 
-    if (await waitForEvent(pushStateEventKey, () => link.click())) {
+    if (await waitForEvent(pushStateEventKey, async () => {
+      await pageClick(`a[href="${newUrl}"]`, {
+        button: 'left',
+      });
+    })) {
       result.push('click');
     }
 
@@ -352,7 +351,16 @@ describe('usages-click', () => {
       frame.contentDocument?.body.appendChild(link);
 
       const linkClicked = new Promise((y) => {
+        let timer = -1;
+
+        timer = window.setTimeout(() => {
+          removeFrame();
+          y();
+        }, 15e3);
+
         frame.contentWindow?.addEventListener('click', (ev: MouseEvent) => {
+          window.clearTimeout(timer);
+
           ev.preventDefault();
 
           eventButtons.push(ev.button);
@@ -361,12 +369,17 @@ describe('usages-click', () => {
         });
 
         window.addEventListener(pushStateEventKey, () => {
+          window.clearTimeout(timer);
+
           eventButtons.push(-2);
           removeFrame();
           y();
         });
       });
 
+      /**
+       * FIXME: Using frame click is unreliable.
+       */
       await frameClick({
         name: newUrl,
         selector: `a[href="${newUrl}"]`,
@@ -374,6 +387,7 @@ describe('usages-click', () => {
           button: 'left',
         },
       });
+      // link.click();
       await linkClicked;
 
       result.push(window.location.pathname);

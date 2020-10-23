@@ -1,21 +1,25 @@
 import { assert } from '@esm-bundle/chai';
-import { pathToRegexp } from 'path-to-regexp';
 
 import { pushStateEventKey } from '../constants.js';
 import type { MatchedRoute, RouteValue, URLChangedStatus, URLObserverEntryProperties } from '../custom_typings.js';
 import { URLObserver } from '../url-observer.js';
+import { routes } from './config.js';
 import type { URLObserverWithDebug } from './custom_test_typings.js';
 import { appendLink, AppendLinkResult } from './helpers/append-link.js';
+import { historyFixture } from './helpers/history-fixture.js';
 import { initObserver } from './helpers/init-observer.js';
 import { waitForEvent } from './helpers/wait-for-event.js';
+import { pageClick } from './wtr-helpers/page-click.js';
 
 describe('url-observer', () => {
   const observers: Set<URLObserverWithDebug> = new Set();
   const init = initObserver(observers);
+  const restoreHistory = historyFixture();
 
   beforeEach(() => {
     observers.forEach(n => n.disconnect());
     observers.clear();
+    restoreHistory();
   });
 
   it(`returns the correct name`, () => {
@@ -50,7 +54,7 @@ describe('url-observer', () => {
       urlEntries,
       observerParam,
     ] = await new Promise<[URLObserverEntryProperties[], URLObserver]>(async (y) => {
-      const { link, removeLink } = appendLink(newUrl);
+      const { removeLink } = appendLink(newUrl);
       const observer = init({
         callback(list, obs) {
           if (!linkClicked) return;
@@ -65,16 +69,18 @@ describe('url-observer', () => {
         },
       });
 
-      observer.observe([/^\/test$/i]);
+      observer.observe([routes.test]);
 
-      await waitForEvent(pushStateEventKey, () => {
+      await waitForEvent(pushStateEventKey, async () => {
         /**
          * Set linkClicked to true first so that 'callback' can be called after link click.
          * - Wrong: link.click() -> linkClicked is false -> noop
          * - Correct: linkClicked is true -> link.click() -> Run 'callback'
          */
         linkClicked = true;
-        link.click();
+        await pageClick(`a[href="${newUrl}"]`, {
+          button: 'left',
+        });
       });
 
       removeLink();
@@ -91,8 +97,8 @@ describe('url-observer', () => {
   it(`does not call .observe() more than once`, () => {
     const observer = init();
 
-    observer.observe([/^\/test$/i]);
-    observer.observe([/^\/test$/i]);
+    observer.observe([routes.test]);
+    observer.observe([routes.test]);
 
     assert.deepStrictEqual<URLChangedStatus[]>(
       observer.takeRecords().map(n => n.entryType),
@@ -105,22 +111,28 @@ describe('url-observer', () => {
     type A = MatchedRoute<Record<'test', string>>;
 
     const newUrls = ['/test', '/test/123'];
-    const routes: Record<'page' | 'section', RegExp> = {
-      page: /^\/test$/i,
-      section: /^\/test\/(?<test>[^\/]+)$/i,
-    };
+
     const observer = init({
       routes: Object.values(routes),
+      observerOption: {
+        dwellTime: -1,
+      },
     });
 
     const result: A[] = [];
-    for (const { link, removeLink } of newUrls.map(n => appendLink(n))) {
-      await waitForEvent(pushStateEventKey, () => {
-        link.click();
-        result.push(observer.match());
+    for (const [
+      newUrl,
+      { removeLink },
+    ] of newUrls.map<[string, AppendLinkResult]>(n => [n, appendLink(n)])) {
+      await waitForEvent(pushStateEventKey, async () => {
+        await pageClick(`a[href="${newUrl}"]`, {
+          button: 'left',
+        });
       });
 
       removeLink();
+
+      result.push(observer.match());
     }
 
     assert.deepStrictEqual(result, [
@@ -133,14 +145,11 @@ describe('url-observer', () => {
     type A = MatchedRoute<Record<'test', string>>;
 
     const newUrls = ['/test', '/test/123'];
-    const routes: Record<'page' | 'section', RegExp> = {
-      page: pathToRegexp('/test'),
-      section: pathToRegexp('/test/:test'),
-    };
 
     const observer = init({
       routes: Object.values(routes),
       observerOption: {
+        dwellTime: -1,
         matcherCallback<T>(p: string, r: RegExp): T {
           const [, ...matches] = p.match(r) ?? [];
 
@@ -148,7 +157,7 @@ describe('url-observer', () => {
             case routes.section: {
               return { test: matches[0] } as unknown as T;
             }
-            case routes.page:
+            case routes.test:
             default: {
               return {} as unknown as T;
             }
@@ -158,13 +167,19 @@ describe('url-observer', () => {
     });
 
     const result: A[] = [];
-    for (const { link, removeLink } of newUrls.map(n => appendLink(n))) {
-      await waitForEvent(pushStateEventKey, () => {
-        link.click();
-        result.push(observer.match());
+    for (const [
+      newUrl,
+      { removeLink },
+    ] of newUrls.map<[string, AppendLinkResult]>(n => [n, appendLink(n)])) {
+      await waitForEvent(pushStateEventKey, async () => {
+        await pageClick(`a[href="${newUrl}"]`, {
+          button: 'left',
+        });
       });
 
       removeLink();
+
+      result.push(observer.match());
     }
 
     assert.deepStrictEqual(result, [
@@ -191,7 +206,7 @@ describe('url-observer', () => {
     }];
 
     const observer = init({
-      routes: [/^\/test/i],
+      routes: [routes.test],
     });
 
     const result: A[] = [];
@@ -203,28 +218,29 @@ describe('url-observer', () => {
     }
 
     assert.deepStrictEqual(result, [
-      ['/^\\/test/i', {
+      ['/^\\/test$/i', {
         beforeRouteHandlers: [],
-        pathRegExp: '/^\\/test/i',
+        pathRegExp: '/^\\/test$/i',
       }],
     ]);
   });
 
   it(`runs matcher with default 'dwellTime'`, async () => {
     const newUrls = ['/test', '/test/123', '/test/456'];
-    const routes: Record<'page' | 'section', RegExp> = {
-      page: /^\/test$/i,
-      section: /^\/test\/(?<test>[^\/]+)$/i,
-    };
 
     init({
       routes: Object.values(routes),
     });
 
     /** Push all URLs into history */
-    for (const { link, removeLink } of newUrls.map(n => appendLink(n))) {
-      await waitForEvent(pushStateEventKey, () => {
-        link.click();
+    for (const [
+      newUrl,
+      { removeLink },
+    ] of newUrls.map<[string, AppendLinkResult]>(n => [n, appendLink(n)])) {
+      await waitForEvent(pushStateEventKey, async () => {
+        await pageClick(`a[href="${newUrl}"]`, {
+          button: 'left',
+        });
       });
 
       removeLink();
@@ -232,8 +248,8 @@ describe('url-observer', () => {
       await new Promise(y => window.setTimeout(y, 2e3));
     }
 
-    /** Pop 2 URLs out of history */
-    for (const _ of '12') {
+    /** Pop n - 1 URLs out of history */
+    for (const _ of newUrls.slice(0, -1)) {
       await waitForEvent('popstate', () => {
         window.history.back();
       });
@@ -244,10 +260,6 @@ describe('url-observer', () => {
 
   it(`runs matcher with default 'dwellTime'`, async () => {
     const newUrls = ['/test', '/test/123', '/test/456'];
-    const routes: Record<'page' | 'section', RegExp> = {
-      page: /^\/test$/i,
-      section: /^\/test\/(?<test>[^\/]+)$/i,
-    };
 
     init({
       observerOption: {
@@ -258,16 +270,21 @@ describe('url-observer', () => {
     });
 
     /** Push all URLs into history */
-    for (const { link, removeLink } of newUrls.map(n => appendLink(n))) {
-      await waitForEvent(pushStateEventKey, () => {
-        link.click();
+    for (const [
+      newUrl,
+      { removeLink },
+    ] of newUrls.map<[string, AppendLinkResult]>(n => [n, appendLink(n)])) {
+      await waitForEvent(pushStateEventKey, async () => {
+        await pageClick(`a[href="${newUrl}"]`, {
+          button: 'left',
+        });
       });
 
       removeLink();
     }
 
-    /** Pop 2 URLs out of history */
-    for (const _ of '12') {
+    /** Pop n - 1 URLs out of history */
+    for (const _ of newUrls.slice(0, -1)) {
       await waitForEvent('popstate', () => {
         window.history.back();
       });
@@ -278,10 +295,6 @@ describe('url-observer', () => {
 
   it(`replaces history when URL changes are too frequent (< 'dwellTime')`, async () => {
     const newUrls = ['/test', '/test/123', '/test/456'];
-    const routes: Record<'page' | 'section', RegExp> = {
-      page: /^\/test$/i,
-      section: /^\/test\/(?<test>[^\/]+)$/i,
-    };
 
     init({
       routes: Object.values(routes),
@@ -289,15 +302,17 @@ describe('url-observer', () => {
 
     /** Push all URLs into history */
     for (const [
-      ni,
-      { link, removeLink },
-    ] of newUrls.map<[number, AppendLinkResult]>((n, i) => [i, appendLink(n)])) {
-      await waitForEvent(pushStateEventKey, () => {
-        link.click();
+      newUrl,
+      { removeLink },
+    ] of newUrls.map<[string, AppendLinkResult]>(n => [n, appendLink(n)])) {
+      await waitForEvent(pushStateEventKey, async () => {
+        await pageClick(`a[href="${newUrl}"]`, {
+          button: 'left',
+        });
       });
 
       /** Only wait for dwellTime after first URL */
-      if (!ni) {
+      if (newUrl === newUrls[0]) {
         await new Promise(y => window.setTimeout(y, 2e3));
       }
 

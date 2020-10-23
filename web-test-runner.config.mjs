@@ -1,14 +1,11 @@
 import { esbuildPlugin } from '@web/dev-server-esbuild';
 import { playwrightLauncher } from '@web/test-runner-playwright';
 
-// import { queryBrowserNamePlugin } from './wtr-plugins/query-browser-name.js';
-// import { keyboardPlugin } from './wtr-plugins/keyboard.js';
 import { frameClickPlugin } from './wtr-plugins/frame-click.js';
 import { pageClickPlugin } from './wtr-plugins/page-click.js';
 
 /** @type {import('@web/test-runner').TestRunnerConfig} */
 const config = {
-  // browserLogs: false,
   browsers: [
     playwrightLauncher({ product: 'chromium' }),
     playwrightLauncher({ product: 'firefox' }),
@@ -20,7 +17,6 @@ const config = {
   coverage: true,
   coverageConfig: {
     report: true,
-    // reportDir: 'test-coverage',
     threshold: {
       branches: 80,
       functions: 80,
@@ -32,7 +28,6 @@ const config = {
       './src/tests/**',
     ],
   },
-  // debug: true,
   files: [
     // './src/tests/**/*.test.ts',
 
@@ -45,6 +40,7 @@ const config = {
     './src/tests/**/methods-update-history.test.ts',
 
     './src/tests/**/url-observer.test.ts',
+
     './src/tests/**/usages-click.test.ts',
     './src/tests/**/usages-hashchange.test.ts',
     './src/tests/**/usages-history.test.ts',
@@ -60,8 +56,6 @@ const config = {
     }),
     frameClickPlugin(),
     pageClickPlugin(),
-    // keyboardPlugin(),
-    // queryBrowserNamePlugin(),
   ],
   testFramework: {
     config: {
@@ -69,7 +63,6 @@ const config = {
       ui: 'bdd',
     }
   },
-  // watch: true,
 };
 
 export default config;

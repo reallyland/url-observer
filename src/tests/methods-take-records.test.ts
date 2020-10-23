@@ -1,25 +1,26 @@
 import { assert } from '@esm-bundle/chai';
 
 import type { URLChangedStatus } from '../custom_typings.js';
+import { routes } from './config.js';
 import type { URLObserverWithDebug } from './custom_test_typings.js';
+import { historyFixture } from './helpers/history-fixture.js';
 import { initObserver } from './helpers/init-observer.js';
 import { TriggerEventListeners, triggerEvents } from './helpers/trigger-event.js';
 
 describe('methods-take-records', () => {
   const observers: Set<URLObserverWithDebug> = new Set();
   const init = initObserver(observers);
+  const restoreHistory = historyFixture();
 
   beforeEach(() => {
     observers.forEach(n => n.disconnect());
     observers.clear();
+    restoreHistory();
   });
 
   it(`always returns 'init' as the first record`, () => {
-    const routes: Record<'test', RegExp> = {
-      test: /^\/test$/i,
-    };
     const observer = init({
-      routes: Object.values(routes),
+      routes: [routes.test],
     });
 
     assert.deepStrictEqual<URLChangedStatus[]>(
@@ -30,11 +31,8 @@ describe('methods-take-records', () => {
 
   it(`takes records`, async () => {
     const listeners: TriggerEventListeners = {};
-    const routes: Record<'test', RegExp> = {
-      test: /^\/test$/i,
-    };
     const observer = init({
-      routes: Object.values(routes),
+      routes: [routes.test],
     });
     const run = triggerEvents(listeners);
 
@@ -48,11 +46,8 @@ describe('methods-take-records', () => {
 
   it(`deletes no records after it disconnects`, async () => {
     const listeners: TriggerEventListeners = {};
-    const routes: Record<'test', RegExp> = {
-      test: /^\/test$/i,
-    };
     const observer = init({
-      routes: Object.values(routes),
+      routes: [routes.test],
     });
     const run = triggerEvents(listeners);
 

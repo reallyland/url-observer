@@ -2,8 +2,10 @@ import { assert } from '@esm-bundle/chai';
 
 import { pushStateEventKey } from '../constants.js';
 import type { RouteEvent, URLChangedStatus } from '../custom_typings.js';
+import { routes } from './config.js';
 import type { URLObserverWithDebug } from './custom_test_typings.js';
 import { appendLink } from './helpers/append-link.js';
+import { historyFixture } from './helpers/history-fixture.js';
 import { initObserver } from './helpers/init-observer.js';
 import { waitForEvent } from './helpers/wait-for-event.js';
 import { pageClick } from './wtr-helpers/page-click.js';
@@ -22,18 +24,12 @@ function normalizeEventDetailUrl<T>(detail?: RouteEvent<T>): RouteEvent<T> {
 describe('usages-route-match', () => {
   const observers: Set<URLObserverWithDebug> = new Set();
   const init = initObserver(observers);
-  const routes: Record<'section' | 'test', RegExp> = {
-    section: /^\/test\/(?<test>[^\/]+)$/i,
-    test: /^\/test$/i,
-  };
-
-  const originalUrl = window.location.href;
+  const restoreHistory = historyFixture();
 
   beforeEach(() => {
     observers.forEach(n => n.disconnect());
     observers.clear();
-
-    window.history.replaceState({}, '', originalUrl);
+    restoreHistory();
   });
 
   // skip microsoftedge

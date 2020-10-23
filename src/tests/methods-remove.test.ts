@@ -1,19 +1,25 @@
 import { assert } from '@esm-bundle/chai';
 
+import { routes } from './config.js';
 import type { URLObserverWithDebug } from './custom_test_typings.js';
+import { historyFixture } from './helpers/history-fixture.js';
 import { initObserver } from './helpers/init-observer.js';
 import { toResult } from './helpers/to-result.js';
 
 describe('methods-remove', () => {
   const observers: Set<URLObserverWithDebug> = new Set();
   const init = initObserver(observers);
+  const restoreHistory = historyFixture();
+
+  beforeEach(() => {
+    observers.forEach(n => n.disconnect());
+    observers.clear();
+    restoreHistory();
+  });
 
   it(`removes existing route with no before route handler`, () => {
-    const routes: Record<'test', RegExp> = {
-      test: /^\/test$/i,
-    };
     const observer = init({
-      routes: Object.values(routes),
+      routes: [routes.test],
     });
 
     observer.remove(routes.test);
@@ -22,11 +28,8 @@ describe('methods-remove', () => {
   });
 
   it(`removes existing route with before route handler`, () => {
-    const routes: Record<'test', RegExp> = {
-      test: /^\/test$/i,
-    };
     const observer = init({
-      routes: Object.values(routes),
+      routes: [routes.test],
     });
 
     observer.add({
@@ -51,11 +54,8 @@ describe('methods-remove', () => {
   it(`removes existing default before route handler`, () => {
     type A = [string, string[]];
 
-    const routes: Record<'test', RegExp> = {
-      test: /^\/test$/i,
-    };
     const observer = init({
-      routes: Object.values(routes),
+      routes: [routes.test],
     });
     const scopeName = ':test';
 
@@ -85,11 +85,8 @@ describe('methods-remove', () => {
   it(`removes existing scoped before route handler`, () => {
     type A = [string, string[]];
 
-    const routes: Record<'test', RegExp> = {
-      test: /^\/test$/i,
-    };
     const observer = init({
-      routes: Object.values(routes),
+      routes: [routes.test],
     });
     const scopeName = ':test';
 

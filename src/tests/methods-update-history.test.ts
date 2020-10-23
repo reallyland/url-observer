@@ -1,24 +1,25 @@
 import { assert } from '@esm-bundle/chai';
 
 import type { URLChangedStatus } from '../custom_typings.js';
+import { routes } from './config.js';
 import type { URLObserverWithDebug } from './custom_test_typings.js';
+import { historyFixture } from './helpers/history-fixture.js';
 import { initObserver } from './helpers/init-observer.js';
 
 describe('methods-update-history', () => {
   const observers: Set<URLObserverWithDebug> = new Set();
-  const routes: Record<'section' | 'test', RegExp> = {
-    section: /^\/test\/(?<test>[^\/]+)$/i,
-    test: /^\/test$/i,
-  };
   const init = initObserver(observers);
+  const restoreHistory = historyFixture();
 
   beforeEach(() => {
     observers.forEach(n => n.disconnect());
     observers.clear();
+    restoreHistory();
   });
 
   it(`updates history programmatically`, async () => {
     const newUrl = '/test/123';
+
     const observer = init({
       routes: Object.values(routes),
     });
