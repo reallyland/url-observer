@@ -2,6 +2,7 @@ import { esbuildPlugin } from '@web/dev-server-esbuild';
 import { playwrightLauncher } from '@web/test-runner-playwright';
 
 import { frameClickPlugin } from './wtr-plugins/frame-click.js';
+import { frameSetContentPlugin } from './wtr-plugins/frame-set-content.js';
 import { pageClickPlugin } from './wtr-plugins/page-click.js';
 
 /** @type {import('@web/test-runner').TestRunnerConfig} */
@@ -55,6 +56,7 @@ const config = {
       target: 'firefox82', /** FF82 does not support private fields */
     }),
     frameClickPlugin(),
+    frameSetContentPlugin(),
     pageClickPlugin(),
   ],
   testFramework: {

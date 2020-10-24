@@ -14,19 +14,16 @@ export function frameClickPlugin() {
       if (command !== commandName || session.browser.type !== 'playwright') return;
 
       const page = session.browser.getPage(session.id);
-      const { options, selector, name, url } = payload ?? {};
+      const { options, selector } = payload ?? {};
 
       try {
-        const el = await page.frame({ url, name })?.$(selector);
+        const { name, ...restOptions } = options ?? {};
 
-        if (el == null) return false;
+        for (const f of page.mainFrame().childFrames()) {
+          if (f.name() !== name) continue;
 
-        await el.click(options);
-
-        /**
-         * FIXME: The following code does not work as reliably.
-         */
-        // await page.frame({ name, url })?.click(selector, options);
+          await f.click(selector, restOptions);
+        }
 
         return true;
       } catch (e) {

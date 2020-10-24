@@ -1,12 +1,11 @@
 import { executeServerCommand } from '@web/test-runner-commands';
-import type { Frame, Page } from 'playwright';
+import type { Frame } from 'playwright';
 
-type A = Parameters<Page['frame']>['0'] extends infer T ? T extends string ? never : T : never;
-export interface FrameClickOptions extends A {
-  selector: Parameters<Frame['click']>['0'];
-  options: Parameters<Frame['click']>['1'];
+type A = Parameters<Frame['click']>;
+interface B extends NonNullable<A[1]> {
+  name?: string;
 }
 
-export async function frameClick(options: FrameClickOptions): Promise<void> {
-  return executeServerCommand('frame-click', { ...options });
+export async function frameClick(selector: A[0], options?: B): Promise<void> {
+  return executeServerCommand('frame-click', { selector, options });
 }

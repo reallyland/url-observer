@@ -11,6 +11,7 @@ import { historyFixture } from './helpers/history-fixture.js';
 import { initObserver } from './helpers/init-observer.js';
 import { waitForEvent } from './helpers/wait-for-event.js';
 import { frameClick } from './wtr-helpers/frame-click.js';
+import { frameSetContent } from './wtr-helpers/frame-set-content.js';
 import { pageClick } from './wtr-helpers/page-click.js';
 
 describe('usages-click', () => {
@@ -319,116 +320,69 @@ describe('usages-click', () => {
   );
 
   it(`does not intercept click when <click>.target is inside an iframe`, async () => {
-    const newUrl = '/test/123';
-
     const observer = init({
       routes: Object.values(routes),
     });
 
     const result: string[] = [];
-    const eventButtons: number[] = [];
+    const eventButtons: boolean[] = [];
+
+    const frameName = 'test';
+    const frame = document.createElement('iframe');
+    // const removeFrame = () => {
+    //   if (frame.parentElement) document.body.removeChild(frame);
+    // };
+
+    frame.src = 'about:blank';
+    frame.name = frame.title = frameName;
+
+    const frameAttached = new Promise(y => frame.onload = y);
+
+    document.body.appendChild(frame);
+
+    await frameAttached;
+    // await new Promise(y => window.setTimeout(y, 5e3));
 
     for (const linkTarget of ['_parent', '_top']) {
-      const frame = document.createElement('iframe');
-      const removeFrame = () => {
-        if (frame.parentElement) document.body.removeChild(frame);
-      };
+      const newUrl = `/test/123?${linkTarget}`;
 
-      /**
-       * FIXME: In FF82, iframe does not behave like other browsers when comes to
-       * appending/ loading content. Here wait for load event before writing any
-       * content into the iframe.
-       */
-      await new Promise(async (y, n) => {
-        try {
-          const msg = 'iframe:ready';
-          const link = document.createElement('a');
-          const sc = document.createElement('script');
+      await frameSetContent([
+        `<a href="${newUrl}" target="${linkTarget}">${newUrl}</a>`,
+        `<script>
+          if (!window.interceptClick) {
+            const a = document.body.querySelector('a[href="${newUrl}"]');
 
-          // Chrome: onload + msg
-          // FF: msg + onload + msg:loaded
-          // Webkit: onload + msg ??
-          const iframeReady = new Promise((iframeResolve) => {
-            frame.onload = iframeResolve;
-          });
-
-          frame.setAttribute('name', newUrl);
-          link.href = link.textContent = newUrl;
-          link.setAttribute('target', linkTarget);
-          sc.innerHTML = `;window.onload=function(){window.postMessage('${
-            msg}','${window.location.origin}');};`;
-
-          // iframe needs to be attached to the DOM first before its children.
-          document.body.appendChild(frame);
-
-          // Promise resolves when iframe is ready.
-          const iframeReadyOnFF = new Promise((iframeResolve) => {
-            frame.contentWindow?.addEventListener('message', (event: MessageEvent) => {
-              if (event.data !== msg) return;
-              iframeResolve();
+            window.addEventListener('click', (ev) => {
+              ev.preventDefault();
+              a.textContent += ' clicked';
             });
-          });
-
-          // Append custom script into iframe.
-          frame.contentDocument?.body.appendChild(sc);
-
-          // 1. Wait for frame.onload
-          await iframeReady;
-          // 2. Wait for whoever settles first: iframe true load on FF or timeout
-          await Promise.race([
-            iframeReadyOnFF,
-            // On Chromium, it is fine to omit timeout value but it times out on Webkit.
-            new Promise(y2 => window.setTimeout(y2, 2e3)),
-          ]);
-
-          // Append link once the iframe is ready.
-          frame.contentDocument?.body.appendChild(link);
-
-          y();
-        } catch (e) {
-          n(e);
-        }
+          }
+        </script>`,
+      ].join(''), {
+        name: frameName,
       });
 
-      await new Promise(async (y) => {
-        let timer = -1;
-
-        timer = window.setTimeout(() => {
-          y();
-        }, 15e3);
-
-        frame.contentWindow?.addEventListener('click', (ev: MouseEvent) => {
-          window.clearTimeout(timer);
-
-          ev.preventDefault();
-
-          eventButtons.push(ev.button);
-          y();
-        });
-
-        window.addEventListener(pushStateEventKey, () => {
-          window.clearTimeout(timer);
-
-          eventButtons.push(-2);
-          y();
-        });
-
-        await frameClick({
-          name: newUrl,
-          selector: `a[href="${newUrl}"]`,
-          options: {
-            button: 'left',
-          },
-        });
+      await frameClick(`a[href="${newUrl}"]`, {
+        button: 'left',
+        name: frameName,
       });
 
-      removeFrame();
+      eventButtons.push(
+        Boolean(
+          frame
+            .contentDocument
+            ?.querySelector(`a[href="${newUrl}"]`)
+            ?.textContent?.endsWith('clicked')
+        )
+      );
+
+      // removeFrame();
 
       result.push(window.location.pathname);
     }
 
     assert.deepStrictEqual(result, ['/', '/']);
-    assert.deepStrictEqual(eventButtons, [0, 0]);
+    assert.deepStrictEqual(eventButtons, [true, true]);
     assert.deepStrictEqual<URLChangedStatus[]>(
       observer.takeRecords().map(n => n.entryType),
       ['init']
