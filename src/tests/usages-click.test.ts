@@ -330,31 +330,70 @@ describe('usages-click', () => {
 
     for (const linkTarget of ['_parent', '_top']) {
       const frame = document.createElement('iframe');
-      /**
-       * In FF82, iframe does not behave like other browsers when comes to appending/ loading
-       * content. Here wait for load event before writing any content into the iframe.
-       */
-      const frameLoaded = new Promise(y => frame.onload = y);
       const removeFrame = () => {
         if (frame.parentElement) document.body.removeChild(frame);
       };
-      const link = document.createElement('a');
 
-      frame.setAttribute('name', newUrl);
-      link.href = link.textContent = newUrl;
-      link.setAttribute('target', linkTarget);
+      /**
+       * FIXME: In FF82, iframe does not behave like other browsers when comes to
+       * appending/ loading content. Here wait for load event before writing any
+       * content into the iframe.
+       */
+      await new Promise(async (y, n) => {
+        try {
+          const msg = 'iframe:ready';
+          const link = document.createElement('a');
+          const sc = document.createElement('script');
 
-      document.body.appendChild(frame);
+          // Chrome: onload + msg
+          // FF: msg + onload + msg:loaded
+          // Webkit: onload + msg ??
+          const iframeReady = new Promise((iframeResolve) => {
+            frame.onload = iframeResolve;
+          });
 
-      await frameLoaded;
+          frame.setAttribute('name', newUrl);
+          link.href = link.textContent = newUrl;
+          link.setAttribute('target', linkTarget);
+          sc.innerHTML = `;window.onload=function(){window.postMessage('${
+            msg}','${window.location.origin}');};`;
 
-      frame.contentDocument?.body.appendChild(link);
+          // iframe needs to be attached to the DOM first before its children.
+          document.body.appendChild(frame);
 
-      const linkClicked = new Promise((y) => {
+          // Promise resolves when iframe is ready.
+          const iframeReadyOnFF = new Promise((iframeResolve) => {
+            frame.contentWindow?.addEventListener('message', (event: MessageEvent) => {
+              if (event.data !== msg) return;
+              iframeResolve();
+            });
+          });
+
+          // Append custom script into iframe.
+          frame.contentDocument?.body.appendChild(sc);
+
+          // 1. Wait for frame.onload
+          await iframeReady;
+          // 2. Wait for whoever settles first: iframe true load on FF or timeout
+          await Promise.race([
+            iframeReadyOnFF,
+            // On Chromium, it is fine to omit timeout value but it times out on Webkit.
+            new Promise(y2 => window.setTimeout(y2, 2e3)),
+          ]);
+
+          // Append link once the iframe is ready.
+          frame.contentDocument?.body.appendChild(link);
+
+          y();
+        } catch (e) {
+          n(e);
+        }
+      });
+
+      await new Promise(async (y) => {
         let timer = -1;
 
         timer = window.setTimeout(() => {
-          removeFrame();
           y();
         }, 15e3);
 
@@ -364,7 +403,6 @@ describe('usages-click', () => {
           ev.preventDefault();
 
           eventButtons.push(ev.button);
-          removeFrame();
           y();
         });
 
@@ -372,23 +410,19 @@ describe('usages-click', () => {
           window.clearTimeout(timer);
 
           eventButtons.push(-2);
-          removeFrame();
           y();
+        });
+
+        await frameClick({
+          name: newUrl,
+          selector: `a[href="${newUrl}"]`,
+          options: {
+            button: 'left',
+          },
         });
       });
 
-      /**
-       * FIXME: Using frame click is unreliable.
-       */
-      await frameClick({
-        name: newUrl,
-        selector: `a[href="${newUrl}"]`,
-        options: {
-          button: 'left',
-        },
-      });
-      // link.click();
-      await linkClicked;
+      removeFrame();
 
       result.push(window.location.pathname);
     }

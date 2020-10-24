@@ -17,7 +17,7 @@ export function frameClickPlugin() {
       const { options, selector, name, url } = payload ?? {};
 
       try {
-        const el = await page.frame({ url, name }).$(selector);
+        const el = await page.frame({ url, name })?.$(selector);
 
         if (el == null) return false;
 

@@ -1,4 +1,5 @@
 import { popStateEventKey, pushStateEventKey } from '../../constants';
+import { pageClick } from '../wtr-helpers/page-click.js';
 import { appendLink } from './append-link';
 
 export type TriggerEventsEvents = ['click', 'hashchange', 'popstate'];
@@ -15,12 +16,14 @@ export function triggerEvents(listeners: TriggerEventListeners) {
     eventName: TriggerEventsName,
     disconnected: boolean = false
   ): Promise<void> {
-    return new Promise((y) => {
+    return new Promise(async (y) => {
       switch (eventName) {
         case 'click': {
+          const newUrl = `/test-${new Date().toJSON()}`;
+
           let clickTimer = -1;
 
-          const { link, removeLink } = appendLink(`/test-${new Date().toJSON()}`);
+          const { link, removeLink } = appendLink(newUrl);
           const onClick = () => {
             $w.clearTimeout(clickTimer);
             (listeners.click ??= []).push('click');
@@ -49,7 +52,9 @@ export function triggerEvents(listeners: TriggerEventListeners) {
             y();
           }, 2e3);
 
-          link.click();
+          await pageClick(`a[href="${newUrl}"]`, {
+            button: 'left',
+          });
 
           break;
         }

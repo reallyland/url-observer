@@ -74,8 +74,8 @@ describe('url-observer', () => {
       await waitForEvent(pushStateEventKey, async () => {
         /**
          * Set linkClicked to true first so that 'callback' can be called after link click.
-         * - Wrong: link.click() -> linkClicked is false -> noop
-         * - Correct: linkClicked is true -> link.click() -> Run 'callback'
+         * - Wrong: link click -> linkClicked is false -> noop
+         * - Correct: linkClicked is true -> link click -> Run 'callback'
          */
         linkClicked = true;
         await pageClick(`a[href="${newUrl}"]`, {
