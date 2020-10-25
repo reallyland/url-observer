@@ -44,7 +44,7 @@ export interface URLObserverCallbacks {
   matcherCallback<T>(pathname: string, pathRegExp: RegExp): T;
 }
 
-export interface URLObserverEntryProperties {
+export interface URLObserverEntryProperty {
   entryType: URLChangedStatus;
   scope: string;
   startTime: number;

@@ -41,6 +41,7 @@ const config = {
     './src/tests/**/methods-update-history.test.ts',
 
     './src/tests/**/url-observer.test.ts',
+    './src/tests/**/url-observer-entry.test.ts',
 
     './src/tests/**/usages-click.test.ts',
     './src/tests/**/usages-hashchange.test.ts',

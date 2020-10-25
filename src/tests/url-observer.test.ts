@@ -1,7 +1,7 @@
 import { assert } from '@esm-bundle/chai';
 
 import { pushStateEventKey } from '../constants.js';
-import type { MatchedRoute, RouteValue, URLChangedStatus, URLObserverEntryProperties } from '../custom_typings.js';
+import type { MatchedRoute, RouteValue, URLChangedStatus, URLObserverEntryProperty } from '../custom_typings.js';
 import { URLObserver } from '../url-observer.js';
 import { routes } from './config.js';
 import type { URLObserverWithDebug } from './custom_test_typings.js';
@@ -53,13 +53,13 @@ describe('url-observer', () => {
     const [
       urlEntries,
       observerParam,
-    ] = await new Promise<[URLObserverEntryProperties[], URLObserver]>(async (y) => {
+    ] = await new Promise<[URLObserverEntryProperty[], URLObserver]>(async (y) => {
       const { removeLink } = appendLink(newUrl);
       const observer = init({
         callback(list, obs) {
           if (!linkClicked) return;
 
-          const result: URLObserverEntryProperties[] = [];
+          const result: URLObserverEntryProperty[] = [];
 
           for (const entry of list.getEntries()) {
             result.push(entry.toJSON());

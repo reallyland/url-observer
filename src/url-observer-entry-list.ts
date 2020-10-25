@@ -1,4 +1,4 @@
-import type { URLChangedStatus, URLObserverEntryProperties } from './custom_typings.js';
+import type { URLChangedStatus, URLObserverEntryProperty } from './custom_typings.js';
 import { URLObserverEntry } from './url-observer-entry.js';
 
 export class URLObserverEntryList {
@@ -8,7 +8,7 @@ export class URLObserverEntryList {
     return 'URLObserverEntryList';
   }
 
-  public addEntry(option: URLObserverEntryProperties): void {
+  public addEntry(option: URLObserverEntryProperty): void {
     this.#entryList.push(new URLObserverEntry(option));
   }
 
