@@ -41,6 +41,16 @@ describe('methods-observe', () => {
     assert.strictEqual(observer.routes.size, 0);
   });
 
+  it(`observes with non-array routes`, () => {
+    const observer = init();
+
+    observer.observe(null as unknown as any, {
+      debug: true,
+    });
+
+    assert.strictEqual(observer.routes.size, 0);
+  });
+
   it(`adds 'init' as first record when .observe() is called`, () => {
     const observer = init();
 

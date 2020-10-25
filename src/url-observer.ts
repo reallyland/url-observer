@@ -102,17 +102,16 @@ export class URLObserver {
 
     (Array.isArray(routes) ? routes : []).forEach(n => this.add({ pathRegExp: n }));
 
-    if (option) {
-      const {
-        debug,
-        dwellTime,
-        matcherCallback,
-      } = option;
+    const {
+      debug,
+      dwellTime,
+      matcherCallback,
+    } = option ?? {};
 
-      this.#debug = debug ?? false;
-      this.#dwellTime = dwellTime ?? 2e3;
-      this.#matcherCallback = matcherCallback ?? urlParamMatcher;
-    }
+    this.#debug = debug ?? false;
+    this.#dwellTime = dwellTime ?? 2e3;
+    this.#matcherCallback = matcherCallback ?? urlParamMatcher;
+    this.#connected = true;
 
     if (this.#debug) {
       Object.defineProperty(this, 'routes', {
@@ -129,7 +128,6 @@ export class URLObserver {
     $w.addEventListener('hashchange', this._hashchange);
     $w.addEventListener('popstate', this._popstate);
 
-    this.#connected = true;
     this._updateUrl({
       url: new URL($l.href),
       scope: '',
