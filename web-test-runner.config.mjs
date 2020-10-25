@@ -61,6 +61,9 @@ const config = {
   ],
   testFramework: {
     config: {
+      checkLeaks: true,
+      fullTrace: true,
+      retries: 3,
       timeout: 60e3,
       ui: 'bdd',
     }
