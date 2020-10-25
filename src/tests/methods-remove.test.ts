@@ -22,8 +22,9 @@ describe('methods-remove', () => {
       routes: [routes.test],
     });
 
-    observer.remove(routes.test);
+    const didRemove = observer.remove(routes.test);
 
+    assert.ok(didRemove);
     assert.strictEqual(observer.routes.size, 0);
   });
 
@@ -46,8 +47,9 @@ describe('methods-remove', () => {
       scope: ':test',
     });
 
-    observer.remove(routes.test);
+    const didRemove = observer.remove(routes.test);
 
+    assert.ok(didRemove);
     assert.strictEqual(observer.routes.size, 0);
   });
 
@@ -73,10 +75,11 @@ describe('methods-remove', () => {
       scope: scopeName,
     });
 
-    observer.remove(routes.test, '');
+    const didRemove = observer.remove(routes.test, '');
 
     const result = toResult<A>(observer.routes, h => Array.from(h.keys()));
 
+    assert.ok(didRemove);
     assert.deepStrictEqual(result, [
       ['/^\\/test$/i', [scopeName]],
     ]);
@@ -104,10 +107,149 @@ describe('methods-remove', () => {
       scope: scopeName,
     });
 
-    observer.remove(routes.test, scopeName);
+    const didRemove = observer.remove(routes.test, scopeName);
 
     const result = toResult<A>(observer.routes, h => Array.from(h.keys()));
 
+    assert.ok(didRemove);
+    assert.deepStrictEqual(result, [
+      ['/^\\/test$/i', [':default']],
+    ]);
+  });
+
+  it(`removes non-existing default before route handler`, () => {
+    type A = [string, string[]];
+
+    const observer = init({
+      routes: [routes.test],
+    });
+    const scopeName = ':test';
+    const scopeName2 = ':test2';
+
+    observer.add({
+      pathRegExp: routes.test,
+      handleEvent() {
+        return true;
+      },
+      scope: scopeName,
+    });
+    observer.add({
+      pathRegExp: routes.test,
+      handleEvent() {
+        return true;
+      },
+      scope: scopeName2,
+    });
+
+    const didRemove = observer.remove(routes.test, ':test3');
+
+    const result = toResult<A>(observer.routes, h => Array.from(h.keys()));
+
+    assert.notOk(didRemove);
+    assert.deepStrictEqual(result, [
+      ['/^\\/test$/i', [scopeName, scopeName2]],
+    ]);
+  });
+
+  it(`removes non-existing scoped before route handler`, () => {
+    type A = [string, string[]];
+
+    const observer = init({
+      routes: [routes.test],
+    });
+    const scopeName = ':test';
+
+    observer.add({
+      pathRegExp: routes.test,
+      handleEvent() {
+        return true;
+      },
+    });
+    observer.add({
+      pathRegExp: routes.test,
+      handleEvent() {
+        return true;
+      },
+      scope: scopeName,
+    });
+
+    const didRemove = observer.remove(routes.test, ':test2');
+
+    const result = toResult<A>(observer.routes, h => Array.from(h.keys()));
+
+    assert.notOk(didRemove);
+    assert.deepStrictEqual(result, [
+      ['/^\\/test$/i', [':default', scopeName]],
+    ]);
+  });
+
+  it(`removes non-existing route`, () => {
+    type A = [string, string[]];
+
+    const observer = init({
+      routes: [routes.test],
+    });
+
+    observer.add({
+      pathRegExp: routes.test,
+      handleEvent() {
+        return true;
+      },
+    });
+
+    const didRemove = observer.remove(/404/i);
+
+    const result = toResult<A>(observer.routes, h => Array.from(h.keys()));
+
+    assert.notOk(didRemove);
+    assert.deepStrictEqual(result, [
+      ['/^\\/test$/i', [':default']],
+    ]);
+  });
+
+  it(`removes non-existing route with defined default scope`, () => {
+    type A = [string, string[]];
+
+    const observer = init({
+      routes: [routes.test],
+    });
+
+    observer.add({
+      pathRegExp: routes.test,
+      handleEvent() {
+        return true;
+      },
+    });
+
+    const didRemove = observer.remove(/404/i, '');
+
+    const result = toResult<A>(observer.routes, h => Array.from(h.keys()));
+
+    assert.notOk(didRemove);
+    assert.deepStrictEqual(result, [
+      ['/^\\/test$/i', [':default']],
+    ]);
+  });
+
+  it(`removes non-existing route with defined scope`, () => {
+    type A = [string, string[]];
+
+    const observer = init({
+      routes: [routes.test],
+    });
+
+    observer.add({
+      pathRegExp: routes.test,
+      handleEvent() {
+        return true;
+      },
+    });
+
+    const didRemove = observer.remove(/404/i, ':test');
+
+    const result = toResult<A>(observer.routes, h => Array.from(h.keys()));
+
+    assert.notOk(didRemove);
     assert.deepStrictEqual(result, [
       ['/^\\/test$/i', [':default']],
     ]);
