@@ -23,32 +23,34 @@ export function triggerEvents(listeners: TriggerEventListeners) {
 
           let clickTimer = -1;
 
-          const { link, removeLink } = appendLink(newUrl);
+          const { removeLink } = appendLink(newUrl);
           const onClick = () => {
             $w.clearTimeout(clickTimer);
             (listeners.click ??= []).push('click');
             $w.removeEventListener(pushStateEventKey, onClick);
+            $w.removeEventListener('click', onPreventClick);
             removeLink();
             y();
+          };
+          const onPreventClick = (ev: MouseEvent) => {
+            if (ev.defaultPrevented) return;
+            ev.preventDefault();
+            $w.removeEventListener('click', onPreventClick);
           };
 
           /**
            * This is to prevent navigation on route change. Without URLObserver, any change in URL
            * will trigger a page redirect.
            */
-          if (disconnected) {
-            link.onclick = (ev: MouseEvent) => {
-              if (ev.defaultPrevented) return;
-              ev.preventDefault();
-            };
-          }
+          if (disconnected) $w.addEventListener('click', onPreventClick);
 
           $w.addEventListener(pushStateEventKey, onClick);
 
           clickTimer = $w.setTimeout(() => {
             (listeners.click ??= []).push(null);
-            removeLink();
             $w.removeEventListener(pushStateEventKey, onClick);
+            $w.removeEventListener('click', onPreventClick);
+            removeLink();
             y();
           }, 2e3);
 

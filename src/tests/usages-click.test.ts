@@ -329,9 +329,9 @@ describe('usages-click', () => {
 
     const frameName = 'test';
     const frame = document.createElement('iframe');
-    // const removeFrame = () => {
-    //   if (frame.parentElement) document.body.removeChild(frame);
-    // };
+    const removeFrame = () => {
+      if (frame.parentElement) document.body.removeChild(frame);
+    };
 
     frame.src = 'about:blank';
     frame.name = frame.title = frameName;
@@ -341,7 +341,6 @@ describe('usages-click', () => {
     document.body.appendChild(frame);
 
     await frameAttached;
-    // await new Promise(y => window.setTimeout(y, 5e3));
 
     for (const linkTarget of ['_parent', '_top']) {
       const newUrl = `/test/123?${linkTarget}`;
@@ -376,10 +375,10 @@ describe('usages-click', () => {
         )
       );
 
-      // removeFrame();
-
       result.push(window.location.pathname);
     }
+
+    removeFrame();
 
     assert.deepStrictEqual(result, ['/', '/']);
     assert.deepStrictEqual(eventButtons, [true, true]);
@@ -432,7 +431,7 @@ describe('usages-click', () => {
 
     await waitForEvent('click', async () => {
       await observer.updateHistory(newUrl);
-      await pageClick(`a[href="${newUrl}]`, {
+      await pageClick(`a[href="${newUrl}"]`, {
         button: 'left',
       });
     });
@@ -443,6 +442,36 @@ describe('usages-click', () => {
     assert.deepStrictEqual<URLChangedStatus[]>(
       observer.takeRecords().map(n => n.entryType),
       ['init', 'manual']
+    );
+  });
+
+  it(`does not update URL when new URL has different origin`, async () => {
+    const newUrl = 'https://example.com';
+
+    const { removeLink } = appendLink(newUrl);
+    const observer = init({
+      routes: Object.values(routes),
+    });
+
+    const linkClicked = new Promise<boolean>((y) => {
+      window.addEventListener('click', function onClick(ev: MouseEvent) {
+        ev.preventDefault();
+        removeLink();
+        window.removeEventListener('click', onClick);
+        y();
+      });
+    });
+
+    await pageClick(`a[href="${newUrl}"]`, {
+      button: 'left',
+    });
+
+    await linkClicked;
+
+    assert.notStrictEqual(window.location.origin, newUrl);
+    assert.deepStrictEqual<URLChangedStatus[]>(
+      observer.takeRecords().map(n => n.entryType),
+      ['init']
     );
   });
 
@@ -548,3 +577,5 @@ describe('usages-click', () => {
   });
 
 });
+
+// FIXME: Refactor click tests
