@@ -329,9 +329,9 @@ describe('usages-click', () => {
 
     const frameName = 'test';
     const frame = document.createElement('iframe');
-    const removeFrame = () => {
-      if (frame.parentElement) document.body.removeChild(frame);
-    };
+    // const removeFrame = () => {
+    //   if (frame.parentElement) document.body.removeChild(frame);
+    // };
 
     frame.src = 'about:blank';
     frame.name = frame.title = frameName;
@@ -378,7 +378,7 @@ describe('usages-click', () => {
       result.push(window.location.pathname);
     }
 
-    removeFrame();
+    // removeFrame();
 
     assert.deepStrictEqual(result, ['/', '/']);
     assert.deepStrictEqual(eventButtons, [true, true]);
