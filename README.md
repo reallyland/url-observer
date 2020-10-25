@@ -19,8 +19,9 @@
 [![Bundlephobia][bundlephobia-badge]][bundlephobia-url]
 
 [![ci][ga-ci-badge]][ga-ci-url]
-[![Sauce Labs][ga-sl-badge]][ga-sl-url]
 [![Dependency Status][daviddm-badge]][daviddm-url]
+[![codecov][codecov-badge]][codecov-url]
+<!-- [![Sauce Labs][ga-sl-badge]][ga-sl-url] -->
 
 [![codebeat badge][codebeat-badge]][codebeat-url]
 [![Language grade: JavaScript][lgtm-badge]][lgtm-url]
@@ -197,6 +198,7 @@ Please note that this project is released with a [Contributor Code of Conduct][c
 [ga-ci-badge]: https://github.com/reallyland/url-observer/workflows/ci/badge.svg?branch=master
 [ga-sl-badge]: https://github.com/reallyland/url-observer/workflows/Sauce%20Labs/badge.svg?branch=master
 [daviddm-badge]: https://flat.badgen.net/david/dep/reallyland/url-observer
+[codecov-badge]: https://flat.badgen.net/codecov/c/github/reallyland/url-observer?label=codecov&icon=codecov
 
 [codebeat-badge]: https://codebeat.co/badges/381c2791-cf71-4725-81da-c8f4d19d8735
 [lgtm-badge]: https://flat.badgen.net/lgtm/grade/javascript/g/reallyland/url-observer?icon=lgtm
@@ -216,6 +218,7 @@ Please note that this project is released with a [Contributor Code of Conduct][c
 [ga-ci-url]: https://github.com/reallyland/url-observer/actions?query=workflow%3Aci
 [ga-sl-url]: https://github.com/reallyland/url-observer/actions?query=workflow%3A%22Sauce+Labs%22
 [daviddm-url]: https://david-dm.org/reallyland/url-observer
+[codecov-url]: https://codecov.io/gh/reallyland/url-observer
 
 [codebeat-url]: https://codebeat.co/projects/github-com-reallyland-url-observer-master
 [lgtm-url]: https://lgtm.com/projects/g/reallyland/url-observer/context:javascript
