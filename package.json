@@ -28,7 +28,11 @@
   "type": "module",
   "exports": {
     ".": "./dist/url-observer.js",
-    "./helpers/*": "./dist/helpers/*.js"
+    "./helpers/*": "./dist/helpers/*.js",
+    "./url-observer": "./dist/url-observer.js",
+    "./url-observer-entry": "./dist/url-observer-entry.js",
+    "./url-observer-entry-list": "./dist/url-observer-entry-list.js",
+    "./typings": "./dist/custom_typings.js"
   },
   "main": "./dist/url-observer.js",
   "module": "./dist/url-observer.js",
@@ -44,23 +48,16 @@
     "dist/helpers/*.js"
   ],
   "scripts": {
-    "//test": "npm run clean && npm run ts && npm run build:config && npm run test:dev",
-    "//test:dev": "node --trace-deprecation run-server.js --config-file dist/tests/wdio.config.js",
-    "//test:sl": "env-cmd -f ./.env npm run test:sl:dev",
-    "//test:sl:dev": "node --trace-deprecation run-server.js --config-file dist/tests/wdio.sl.config.js",
     "build": "tsc -p tsconfig.prod.json",
-    "build:config": "tsc -p tsconfig.wdio.json",
     "check": "package-check",
     "clean": "shx rm -rf .*cache *.log dist/ logs/",
     "lint": "npm run lint:debug -- --config tslint.prod.json",
     "lint:debug": "tslint --project tsconfig.json --format stylish",
     "prepublishOnly": "npm run clean && npm run lint && npm run build",
-    "serve": "es-dev-server --app-index=demo.html --dedupe-modules --node-resolve --port=3000 --watch --compatibility=none",
-    "serve:compile": "es-dev-server --app-index=demo.html --dedupe-modules --node-resolve --port=3000 --watch --compatibility=none --babel --babel-config=babel.config.json",
     "test": "wtr",
     "ts": "tsc",
     "watch": "wtr --watch",
-    "wtr": "node --max-old-space-size=8192 node_modules/@web/test-runner/dist/bin.js"
+    "wtr": "node --max-old-space-size=8192 --trace-deprecation node_modules/@web/test-runner/dist/bin.js"
   },
   "husky": {
     "hooks": {
