@@ -2,29 +2,29 @@ import type { URLChangedStatus, URLObserverEntryProperty } from './custom_typing
 import { URLObserverEntry } from './url-observer-entry.js';
 
 export class URLObserverEntryList {
-  #entryList: URLObserverEntry[] = [];
+  #entryList: Set<URLObserverEntry> = new Set();
 
   public get [Symbol.toStringTag](): string {
     return 'URLObserverEntryList';
   }
 
   public addEntry(option: URLObserverEntryProperty): void {
-    this.#entryList.push(new URLObserverEntry(option));
+    this.#entryList.add(new URLObserverEntry(option));
   }
 
   public deleteEntries(): void {
-    this.#entryList = [];
+    this.#entryList.clear();
   }
 
   public getEntries(): URLObserverEntry[] {
-    return this.#entryList;
+    return Array.from(this.#entryList);
   }
 
   public getEntriesByEntryScope(scope: string): URLObserverEntry[] {
-    return this.#entryList.filter(n => n.scope === scope);
+    return Array.from(this.#entryList).filter(n => n.scope === scope);
   }
 
   public getEntriesByEntryType(entryType: URLChangedStatus): URLObserverEntry[] {
-    return this.#entryList.filter(n => n.entryType === entryType);
+    return Array.from(this.#entryList).filter(n => n.entryType === entryType);
   }
 }

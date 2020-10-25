@@ -3,7 +3,7 @@ import { assert } from '@esm-bundle/chai';
 import type { URLObserverEntryProperty } from '../custom_typings.js';
 import { URLObserverEntryList } from '../url-observer-entry-list.js';
 
-describe('url-observer-entry', () => {
+describe('url-observer-entry-list', () => {
   const property: URLObserverEntryProperty = {
     entryType: 'init',
     scope: ':default',
@@ -27,7 +27,10 @@ describe('url-observer-entry', () => {
     const entryList = new URLObserverEntryList();
 
     assert.strictEqual(entryList[Symbol.toStringTag], 'URLObserverEntryList');
-    assert.strictEqual(Object.prototype.toString.call(entryList), '[object URLObserverEntryList]');
+    assert.strictEqual(
+      Object.prototype.toString.call(entryList),
+      '[object URLObserverEntryList]'
+    );
   });
 
   it(`returns entries`, () => {
@@ -44,7 +47,10 @@ describe('url-observer-entry', () => {
     });
     clickProperties.forEach(n => entryList.addEntry(n));
 
-    assert.deepStrictEqual(entryList.getEntriesByEntryScope(':default'), [property]);
+    assert.deepStrictEqual(
+      entryList.getEntriesByEntryScope(':default').map(n => n.toJSON()),
+      [property, ...clickProperties]
+    );
   });
 
   it(`returns entries by entry type`, () => {
@@ -53,7 +59,10 @@ describe('url-observer-entry', () => {
     entryList.addEntry(property);
     clickProperties.forEach(n => entryList.addEntry(n));
 
-    assert.deepStrictEqual(entryList.getEntriesByEntryType('click'), clickProperties);
+    assert.deepStrictEqual(
+      entryList.getEntriesByEntryType('click').map(n => n.toJSON()),
+      clickProperties
+    );
   });
 
   it(`adds entry`, () => {
@@ -61,7 +70,10 @@ describe('url-observer-entry', () => {
 
     entryList.addEntry(property);
 
-    assert.deepStrictEqual(entryList.getEntries(), [property]);
+    assert.deepStrictEqual(
+      entryList.getEntries().map(n => n.toJSON()),
+      [property]
+    );
   });
 
   it(`deletes entries`, () => {
@@ -70,7 +82,10 @@ describe('url-observer-entry', () => {
     entryList.addEntry(property);
     entryList.deleteEntries();
 
-    assert.deepStrictEqual(entryList.getEntries(), []);
+    assert.deepStrictEqual(
+      entryList.getEntries().map(n => n.toJSON()),
+      []
+    );
   });
 
 });
