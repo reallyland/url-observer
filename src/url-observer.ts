@@ -22,6 +22,12 @@ export class URLObserver {
   #callback?: URLObserverCallbacks['callback'];
   #connected: boolean = false;
   #debug: boolean = false;
+  /**
+   * dwellTime is required to prevent pushState IPC storm DoS.
+   *
+   * @see {@link https://codereview.chromium.org/2972073002|Issue 2972073002}
+   * for more in-depth issue.
+   */
   #dwellTime: number = 2e3;
   #entryList: URLObserverEntryList = new URLObserverEntryList();
   #lastChangedAt: number = -1;

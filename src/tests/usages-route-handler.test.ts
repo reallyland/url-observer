@@ -300,4 +300,54 @@ describe('usages-route-handler', () => {
     }
   );
 
+  it(`does not run before route handler for non-existent route`, async () => {
+    type A = (keyof typeof routes)[];
+
+    const newUrls: [string, string][] = [
+      ['/test2', ''],
+      ['/test2', ':test'],
+    ];
+
+    const result: A[] = [];
+    const clicked: boolean[] = [];
+
+    for (const [newUrl, newScope] of newUrls) {
+      const observer = init({
+        routes: Object.values(routes),
+      });
+
+      const temp: A = [];
+
+      observer.add({
+        pathRegExp: routes.test,
+        handleEvent() {
+          temp.push('test');
+          return true;
+        },
+        scope: newScope || undefined,
+      });
+      observer.add({
+        pathRegExp: routes.section,
+        handleEvent() {
+          temp.push('section');
+          return true;
+        },
+        scope: newScope || undefined,
+      });
+
+      const didClick = Boolean(
+        await waitForEvent(pushStateEventKey, async () => {
+          await observer.updateHistory(newUrl, newScope || undefined);
+        })
+      );
+
+      if (temp.length) result.push(temp);
+
+      clicked.push(didClick);
+    }
+
+    assert.deepStrictEqual(clicked, [true, true]);
+    assert.deepStrictEqual(result, []);
+  });
+
 });

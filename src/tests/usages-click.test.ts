@@ -576,6 +576,111 @@ describe('usages-click', () => {
     );
   });
 
+  it(`updates URL based on document.baseURI or base[href]`, async () => {
+    const newBaseURIs: [string, string][] = [
+      ['base:', '/test/123'],
+      ['base:https://example.com', 'test/456'],
+      ['', '/test/789'], /** document.baseURI=null, IE11 only */
+      ['https://example.com', '/test/0ab'], /** Manually override document.baseURI */
+    ];
+    const originalUrl = window.location.href;
+    const originalOrigin = new URL(originalUrl).origin;
+
+    let cleanup;
+
+    const observer = init({
+      routes: Object.values(routes),
+      observerOption: {
+        dwellTime: -1, /** This test requires all link clicks */
+      },
+    });
+
+    const baseURIs: (null | string)[] = [];
+    const clicked: boolean[] = [];
+    for (const [newBaseURI, newUrl] of newBaseURIs) {
+      if (/^base:/i.test(newBaseURI)) {
+        if (/^base:.+/i.test(newBaseURI)) {
+          const baseEl = document.createElement('base');
+
+          baseEl.href = newBaseURI.replace('base:', '');
+
+          document.head.appendChild(baseEl);
+
+          cleanup = () => {
+            if (baseEl.parentElement) document.head.removeChild(baseEl);
+          };
+        }
+
+        baseURIs.push(document.baseURI);
+      } else {
+        Object.defineProperty(document, 'baseURI', {
+          configurable: true,
+          value: newBaseURI || null,
+        });
+
+        cleanup = () => {
+          Object.defineProperty(document, 'baseURI', {
+            configurable: true,
+            value: originalUrl,
+          });
+        };
+
+        baseURIs.push(newBaseURI || null);
+      }
+
+      const { removeLink } = appendLink(newUrl);
+      const linkClicked = await new Promise<boolean>(async (y) => {
+        let clickTimer = -1;
+
+        const onPreventClick = (ev: MouseEvent) => {
+          window.clearTimeout(clickTimer);
+          ev.preventDefault();
+          window.removeEventListener('click', onPreventClick);
+          y(true);
+        };
+
+        window.addEventListener('click', onPreventClick);
+
+        clickTimer = window.setTimeout(() => {
+          window.removeEventListener('click', onPreventClick);
+          y(false);
+        }, 2e3);
+
+        await pageClick(`a[href="${newUrl}"]`, {
+          button: 'left',
+        });
+      });
+
+      removeLink();
+      cleanup?.();
+
+      clicked.push(linkClicked);
+    }
+
+    assert.deepStrictEqual(clicked, Array.from(Array(newBaseURIs.length), () => true));
+    assert.deepStrictEqual(
+      baseURIs,
+      [
+        originalUrl,
+        'https://example.com/',
+        null,
+        'https://example.com',
+      ]
+    );
+    assert.deepStrictEqual(
+      observer.takeRecords().filter(n => n.entryType !== 'init').map((n) => {
+        const url = new URL(n.url);
+
+        return `${url.origin}${url.pathname}${url.search}`;
+      }),
+      [
+        `${originalOrigin}/test/123`,
+        `${originalOrigin}/test/789`,
+        `${originalOrigin}/test/0ab`,
+      ]
+    );
+  });
+
 });
 
-// FIXME: Refactor click tests
+// FIXME: Refactor click tests on click after wait for click event at window
