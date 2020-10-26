@@ -73,7 +73,7 @@
     "@material/mwc-dialog": "^0.19.1",
     "@reallyland/tsconfig": "^2.0.0",
     "@reallyland/tslint-config": "^1.1.1",
-    "@skypack/package-check": "^0.1.0",
+    "@skypack/package-check": "^0.2.2",
     "@types/koa": "^2.11.6",
     "@web/dev-server-esbuild": "^0.2.6",
     "@web/test-runner": "^0.9.4",
