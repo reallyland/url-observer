@@ -63,7 +63,7 @@ describe('methods-disconnect', () => {
 
         observer.disconnect();
 
-        await new Promise(async (y) => {
+        await new Promise<void>(async (y) => {
           let clickTimer = -1;
 
           const onPopState = async () => {

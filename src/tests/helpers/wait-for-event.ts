@@ -4,7 +4,7 @@ export function waitForEvent<T extends Event>(
   eventName: string,
   cb?: () => Promise<void> | void
 ): Promise<T | undefined> {
-  return new Promise<T>(async (y) => {
+  return new Promise<T | undefined>(async (y) => {
     let listenerTimer = -1;
 
     const onEventFired = (ev: T) => {
@@ -17,7 +17,7 @@ export function waitForEvent<T extends Event>(
 
     listenerTimer = $w.setTimeout(() => {
       $w.removeEventListener(eventName as unknown as any, onEventFired);
-      y();
+      y(undefined);
     }, 2e3);
 
     if (typeof(cb) === 'function') await cb();
