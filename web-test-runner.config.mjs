@@ -1,8 +1,6 @@
 import { esbuildPlugin } from '@web/dev-server-esbuild';
 import { playwrightLauncher } from '@web/test-runner-playwright';
 
-import { frameClickPlugin } from './wtr-plugins/frame-click.js';
-import { frameSetContentPlugin } from './wtr-plugins/frame-set-content.js';
 import { pageClickPlugin } from './wtr-plugins/page-click.js';
 
 /** @type {import('@web/test-runner').TestRunnerConfig} */
@@ -32,6 +30,8 @@ const config = {
   files: [
     // './src/tests/**/*.test.ts',
 
+    // './src/tests/**/iframe.test.ts',
+
     './src/tests/**/methods-add.test.ts',
     './src/tests/**/methods-disconnect.test.ts',
     './src/tests/**/methods-match.test.ts',
@@ -57,8 +57,6 @@ const config = {
       ts: true,
       target: 'firefox82', /** FF82 does not support private fields */
     }),
-    frameClickPlugin(),
-    frameSetContentPlugin(),
     pageClickPlugin(),
   ],
   testFramework: {

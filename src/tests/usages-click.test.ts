@@ -2,6 +2,7 @@ import { assert } from '@esm-bundle/chai';
 
 import { pushStateEventKey } from '../constants.js';
 import type { URLChangedStatus } from '../custom_typings.js';
+import type { URLObserverEntry } from '../url-observer-entry.js';
 import { routes } from './config.js';
 import type { URLObserverWithDebug } from './custom_test_typings.js';
 import { appendElement } from './helpers/append-element.js';
@@ -10,8 +11,6 @@ import { appendShadowElement } from './helpers/append-shadow-element.js';
 import { historyFixture } from './helpers/history-fixture.js';
 import { initObserver } from './helpers/init-observer.js';
 import { waitForEvent } from './helpers/wait-for-event.js';
-import { frameClick } from './wtr-helpers/frame-click.js';
-import { frameSetContent } from './wtr-helpers/frame-set-content.js';
 import { pageClick } from './wtr-helpers/page-click.js';
 
 describe('usages-click', () => {
@@ -319,73 +318,89 @@ describe('usages-click', () => {
     }
   );
 
-  it(`does not intercept click when <click>.target is inside an iframe`, async () => {
-    const observer = init({
-      routes: Object.values(routes),
-    });
+  it.skip(`does not intercept click when <click>.target is in a iframe`, async () => {
+    interface A {
+      changes: string[];
+      records: URLObserverEntry[];
+    }
 
     const result: string[] = [];
-    const eventButtons: boolean[] = [];
-
-    const frameName = 'test';
     const frame = document.createElement('iframe');
-    // const removeFrame = () => {
-    //   if (frame.parentElement) document.body.removeChild(frame);
-    // };
 
-    frame.src = 'about:blank';
-    frame.name = frame.title = frameName;
+    frame.name = frame.title = 'test';
+    frame.src = '/src/tests/iframe.html';
 
-    const frameAttached = new Promise(y => frame.onload = y);
+    const removeFrame = () => {
+      if (frame.parentElement) {
+        document.body.removeChild(frame);
+      }
+    };
+    function setupMessageListener<T extends unknown = string>(
+      y: (value: T) => void,
+      isJson?: boolean
+    ): void {
+      function onMessage(ev: MessageEvent) {
+        y(
+          (isJson ?? false) ? JSON.parse(ev.data) : ev.data
+        );
+
+        window.removeEventListener('message', onMessage);
+      }
+
+      window.addEventListener('message', onMessage);
+    }
+    const frameReadyTask = new Promise<string>(y => setupMessageListener(y));
 
     document.body.appendChild(frame);
 
-    await frameAttached;
+    const readyMessage = await frameReadyTask;
+    const observeReadyMessage = await new Promise((y) => {
+      setupMessageListener(y);
+      frame.contentWindow?.postMessage('observe', '*');
+    });
 
-    for (const linkTarget of ['_parent', '_top']) {
-      const newUrl = `/test/123?${linkTarget}`;
-
-      await frameSetContent([
-        `<a href="${newUrl}" target="${linkTarget}">${newUrl}</a>`,
-        `<script>
-          if (!window.interceptClick) {
-            const a = document.body.querySelector('a[href="${newUrl}"]');
-
-            window.addEventListener('click', (ev) => {
-              ev.preventDefault();
-              a.textContent += ' clicked';
-            });
-          }
-        </script>`,
-      ].join(''), {
-        name: frameName,
+    const linkTargets = ['_parent', '_top'];
+    for (const linkTarget of linkTargets) {
+      const msg = await new Promise<string>((y) => {
+        setupMessageListener(y);
+        frame.contentWindow?.postMessage(`click:${linkTarget}`, '*');
       });
 
-      await frameClick(`a[href="${newUrl}"]`, {
-        button: 'left',
-        name: frameName,
-      });
-
-      eventButtons.push(
-        Boolean(
-          frame
-            .contentDocument
-            ?.querySelector(`a[href="${newUrl}"]`)
-            ?.textContent?.endsWith('clicked')
-        )
-      );
-
-      result.push(window.location.pathname);
+      result.push(msg);
     }
 
-    // removeFrame();
+    const {
+      changes,
+      records,
+    } = await new Promise<A>((y) => {
+      setupMessageListener<A>(y, true);
+      frame.contentWindow?.postMessage('changes', '*');
+    });
 
-    assert.deepStrictEqual(result, ['/', '/']);
-    assert.deepStrictEqual(eventButtons, [true, true]);
-    assert.deepStrictEqual<URLChangedStatus[]>(
-      observer.takeRecords().map(n => n.entryType),
-      ['init']
+    assert.strictEqual(readyMessage, 'ready');
+    assert.strictEqual(observeReadyMessage, 'observe:ready');
+    assert.deepStrictEqual(
+      result,
+      [
+        'click:_parent:ready',
+        'click:_top:ready',
+      ]
     );
+    assert.deepStrictEqual(
+      changes,
+      [
+        'window:click',
+        'window:click',
+      ]
+    );
+    assert.deepStrictEqual(
+      records.map(n => n.entryType),
+      [
+        'init',
+      ]
+    );
+
+    removeFrame();
   });
 
   it(`does not intercept click when <click>.target is a cross-origin link`, async () => {
@@ -453,7 +468,7 @@ describe('usages-click', () => {
       routes: Object.values(routes),
     });
 
-    const linkClicked = new Promise<boolean>((y) => {
+    const linkClicked = new Promise<void>((y) => {
       window.addEventListener('click', function onClick(ev: MouseEvent) {
         ev.preventDefault();
         removeLink();

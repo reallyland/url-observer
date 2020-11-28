@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iframe test</title>
+    <script type="module">
+      import { URLObserver } from '/src/url-observer.ts';
+      import {  routes } from '/src/tests/config.ts';
+
+      let observer;
+      const changes = [];
+
+      window.onload = () => {
+        const sendReadyMessage = (msg) => {
+          window.parent.postMessage(`${msg}:ready`, '*');
+        };
+        window.addEventListener('message', (ev) => {
+          const msg = ev.data;
+
+          switch (msg) {
+            case 'observe': {
+              observer = new URLObserver();
+
+              observer.observe(routes, {
+                debug: true,
+              });
+
+              sendReadyMessage(msg);
+              break;
+            }
+            case 'click:_parent': {
+              const link = document.body.querySelector('a[href="/test/123"][target="_parent"]');
+
+              link.click();
+
+              sendReadyMessage(msg);
+
+              break;
+            }
+            case 'click:_top': {
+              const link = document.body.querySelector('a[href="/test/456"][target="_top"]');
+
+              link.click();
+
+              sendReadyMessage(msg);
+
+              break;
+            }
+            case 'changes': {
+              const msg = JSON.stringify({
+                changes,
+                records: observer.takeRecords(),
+              });
+
+              window.parent.postMessage(msg, '*');
+
+              observer.disconnect();
+
+              break;
+            }
+            default:
+          }
+        });
+
+        window.addEventListener('click', (ev) => {
+          ev.preventDefault();
+
+          changes.push('window:click');
+        });
+
+        window.parent.postMessage('ready', '*');
+      };
+    </script>
+  </head>
+  <body>
+    <a href="/test/123" target="_parent">/test/123</a>
+    <a href="/test/456" target="_top">/test/456</a>
+  </body>
+</html>
