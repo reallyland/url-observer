@@ -89,6 +89,18 @@ interface MatchedRoute<T extends Records<string, any>> {
 }
 ```
 
+### RouteEvent&lt;T&gt;
+
+```ts
+interface RouteEvent<T extends Record<string, any> = Record<string, any>> {
+  found: boolean;
+  matches: T;
+  scope: string;
+  status: URLChangedStatus;
+  url: string;
+}
+```
+
 ### RouteOption&lt;T&gt;
 
 ```ts
@@ -358,6 +370,7 @@ console.log(observer.routes);
 [Scoped link]: #scoped-link
 [URLChangedStatus]: #urlchangedstatus
 [URLObserverEntry]: #urlobserverentry
+[RouteEvent&lt;T&gt;]: #routeeventt
 
 [Array]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array
 [boolean]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean
