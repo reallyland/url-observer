@@ -12,7 +12,7 @@ export type URLChangedStatus =
 
 export interface MatchedRoute<T extends Record<string, any> = Record<string, any>> {
   found: boolean;
-  matches: T;
+  params: T;
 }
 
 export interface RouteEvent<T extends Record<string, any> = Record<string, any>> extends
@@ -23,7 +23,7 @@ export interface RouteEvent<T extends Record<string, any> = Record<string, any>>
 }
 
 export interface RouteOption<T extends Record<string, any> = Record<string, any>> {
-  handleEvent?(matches: T, status: URLChangedStatus): Promise<boolean> | boolean;
+  handleEvent?(params: T, status: URLChangedStatus): Promise<boolean> | boolean;
   pathRegExp: RegExp;
   scope?: string;
 }

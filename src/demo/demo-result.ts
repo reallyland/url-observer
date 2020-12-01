@@ -101,11 +101,11 @@ export class DemoResult extends LitElement {
   private _handlerResult() {
     const {
       found,
-      matches,
+      params,
     } = router.match<RouteMatch>();
 
     if (found) {
-      const { result } = matches;
+      const { result } = params;
 
       this.#result = $w.decodeURI(result).replace(/ /gi, '+');
     } else {

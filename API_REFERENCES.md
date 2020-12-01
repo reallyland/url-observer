@@ -60,13 +60,13 @@ Custom event being fired whenever the URLObserver receives a `popstate` event wh
   * `status` <[URLChangedStatus]> Status code indicates what triggers the history update.
   * `url` <[string]> Absolute URL that triggers the event.
   * `found` <[boolean]> If true, the URL is a matched route.
-  * `matches` <T> URL matches.
+  * `params` <T> URL matches.
 
 ```ts
 window.addEventListener(':popState', ({ detail }) => {
   console.log('data', {
     found: detail.found,
-    matches: detail.matches,
+    params: detail.params,
     scope: detail.scope,
     status: detail.status,
     url: detail.url,
@@ -85,7 +85,7 @@ Custom event being fired whenever the URLObserver pushes a history entry. Refer 
 ```ts
 interface MatchedRoute<T extends Records<string, any>> {
   found: boolean;
-  matches: T;
+  params: T;
 }
 ```
 
@@ -94,7 +94,7 @@ interface MatchedRoute<T extends Records<string, any>> {
 ```ts
 interface RouteEvent<T extends Record<string, any> = Record<string, any>> {
   found: boolean;
-  matches: T;
+  params: T;
   scope: string;
   status: URLChangedStatus;
   url: string;
@@ -105,7 +105,7 @@ interface RouteEvent<T extends Record<string, any> = Record<string, any>> {
 
 ```ts
 interface RouteOption<T extends Record<string, any>> {
-  handleEvent?(matches: T, status: URLChangedStatus): Promise<boolean>;
+  handleEvent?(params: T, status: URLChangedStatus): Promise<boolean>;
   pathRegExp: RegExp;
   scope?: string;
 }
@@ -163,7 +163,7 @@ Dynamically add new route or a before route handler to an registered route.
 
 * `option` <[RouteOption&lt;T&gt;]> Route option.
   * `handleEvent` <?[Function]> Optional before route handler that executes before navigating to a new URL.
-    * `matches` <`T`> URL matches.
+    * `params` <`T`> URL matches.
     * `status` <[URLChangedStatus]> Status code indicates what triggers the history update.
     * returns: <[Promise]&lt;[boolean]&gt;> If true, navigates to new URL.
   * `pathRegExp` <[RegExp]> URL matching RegExp.
@@ -207,7 +207,7 @@ console.assert(observer.takeRecords().length === 0);
 ### match&lt;T&gt;(): MatchedRoute&lt;T&gt;
 
 Run to determine if current URL is a matching route that is being observed by the observer. It also returns matching URL parameters if there is any.
-* returns: [MatchedRoute&lt;T&gt;] An object contains `found` and `matches`. `found` is set to true for a matched route while `matches` contains all the URL matches.
+* returns: [MatchedRoute&lt;T&gt;] An object contains `found` and `params`. `found` is set to true for a matched route while `params` contains all the URL matches.
 
 ```ts
 interface A {
@@ -219,20 +219,20 @@ observer.observe([/^\/test\/(?<test>[^\/]+)$/i]);
 /** Say, current URL is 'https://example.com/test/123', */
 const {
   found,
-  matches,
+  params,
 } = observer.match<A>();
 
 console.assert(found === true);
-console.assert(matches.test === '123');
+console.assert(params.test === '123');
 
 /** Say, current URL is 'https://example.com/test2/123', */
 const {
   found,
-  matches,
+  params,
 } = observer.match<A>();
 
 console.assert(found === false);
-console.assert(matches.test === undefined);
+console.assert(params.test === undefined);
 ```
 
 ### observe(routes: RegExp[][, option: URLObserverProperties]): void

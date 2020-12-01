@@ -39,7 +39,7 @@ describe('methods-match', () => {
 
     assert.deepStrictEqual(observer.match(), {
       found: true,
-      matches: { test: '123' },
+      params: { test: '123' },
     });
   });
 
@@ -61,7 +61,7 @@ describe('methods-match', () => {
 
     assert.deepStrictEqual(observer.match(), {
       found: false,
-      matches: {},
+      params: {},
     });
   });
 

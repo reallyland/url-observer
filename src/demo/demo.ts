@@ -15,15 +15,15 @@ export const routes: Record<Route, RegExp> = {
 // };
 
 // function customMatcher<T>(pathname: string, pathRegExp: RegExp): T {
-//   const [, ...matches] = pathname.match(pathRegExp) ?? [];
+//   const [, ...params] = pathname.match(pathRegExp) ?? [];
 
 //   switch (pathRegExp) {
 //     case routes.result: {
-//       return { result: decodeURIComponent(matches[0]) } as unknown as T;
+//       return { result: decodeURIComponent(params[0]) } as unknown as T;
 //     }
 //     case routes.pages:
 //     default: {
-//       return { page: decodeURIComponent(matches[0]) } as unknown as T;
+//       return { page: decodeURIComponent(params[0]) } as unknown as T;
 //     }
 //   }
 // }

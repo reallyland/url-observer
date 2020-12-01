@@ -91,14 +91,14 @@ export class URLObserver {
       if (pathRegExp.test(pathname)) {
         return {
           found: true,
-          matches: this.#matcherCallback<T>(pathname, pathRegExp),
+          params: this.#matcherCallback<T>(pathname, pathRegExp),
         };
       }
     }
 
     return {
       found: false,
-      matches: {} as T,
+      params: {} as T,
     };
   }
 
@@ -245,10 +245,10 @@ export class URLObserver {
         beforeRouteHandlers,
         pathRegExp,
       } = route;
-      const matches = this.#matcherCallback<Record<string, any>>(url.pathname, pathRegExp);
+      const params = this.#matcherCallback<Record<string, any>>(url.pathname, pathRegExp);
       const beforeRouteHandler = beforeRouteHandlers.get(scope);
 
-      if (beforeRouteHandler) return beforeRouteHandler(matches, status);
+      if (beforeRouteHandler) return beforeRouteHandler(params, status);
     }
 
     return true;
@@ -302,8 +302,8 @@ export class URLObserver {
             url: fullUrl,
             ...(
               foundRouteRegExp ?
-                { found: true, matches: this.#matcherCallback(url.pathname, foundRouteRegExp) } :
-                { found: false, matches: {} }
+                { found: true, params: this.#matcherCallback(url.pathname, foundRouteRegExp) } :
+                { found: false, params: {} }
             ),
           } as RouteEvent,
         }

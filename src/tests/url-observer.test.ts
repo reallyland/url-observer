@@ -136,8 +136,8 @@ describe('url-observer', () => {
     }
 
     assert.deepStrictEqual(result, [
-      { found: true, matches: {} },
-      { found: true, matches: { test: '123' } },
+      { found: true, params: {} },
+      { found: true, params: { test: '123' } },
     ]);
   });
 
@@ -151,11 +151,11 @@ describe('url-observer', () => {
       observerOption: {
         dwellTime: -1,
         matcherCallback<T>(p: string, r: RegExp): T {
-          const [, ...matches] = p.match(r) ?? [];
+          const [, ...params] = p.match(r) ?? [];
 
           switch (r) {
             case routes.section: {
-              return { test: matches[0] } as unknown as T;
+              return { test: params[0] } as unknown as T;
             }
             case routes.test:
             default: {
@@ -183,8 +183,8 @@ describe('url-observer', () => {
     }
 
     assert.deepStrictEqual(result, [
-      { found: true, matches: {} },
-      { found: true, matches: { test: '123' } },
+      { found: true, params: {} },
+      { found: true, params: { test: '123' } },
     ]);
   });
 

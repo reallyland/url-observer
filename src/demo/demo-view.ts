@@ -75,7 +75,7 @@ export class DemoView extends LitElement {
     router.add<RouteMatch>({
       pathRegExp: routes.pages,
       scope: $name,
-      handleEvent: async (matches) => {
+      handleEvent: async (params) => {
         if (!this._navigationPrompt) this._navigationPrompt = true;
 
         this._navigationPromptOpen = true;
@@ -86,7 +86,7 @@ export class DemoView extends LitElement {
 
             if (!confirm) return;
 
-            this._page = matches.page || 'home';
+            this._page = params.page || 'home';
           };
         });
       },
@@ -135,9 +135,9 @@ export class DemoView extends LitElement {
   }
 
   private async _onLoad(ev: CustomEvent<RouteEvent<RouteMatch>>) {
-    const { found, matches } = ev.detail;
+    const { found, params } = ev.detail;
 
-    if (found) this._page = matches.page || 'home';
+    if (found) this._page = params.page || 'home';
   }
 
   private _onNavigationPromptClosed(ev: CustomEvent<DialogClosedEvent>) {

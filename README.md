@@ -127,7 +127,7 @@ const {
    *    - This matches URL like '/test/123' and returns { test: 123  }. However, this requires
    *      ES2018's RegExp named capture groups to work as expected.
    */
-  matches,
+  params,
 } = observer.match();
 
 /** Remove a route from the observer */

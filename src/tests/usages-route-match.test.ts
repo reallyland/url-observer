@@ -53,7 +53,7 @@ describe('usages-route-match', () => {
 
     assert.deepStrictEqual<RouteEvent<A>>(normalizeEventDetailUrl(ev?.detail), {
       found: true,
-      matches: {
+      params: {
         test: '123',
       },
       scope: '',
@@ -86,7 +86,7 @@ describe('usages-route-match', () => {
 
     assert.deepStrictEqual<RouteEvent<A>>(normalizeEventDetailUrl(ev?.detail), {
       found: false,
-      matches: {},
+      params: {},
       scope: '',
       status: 'click',
       url: newUrl,
