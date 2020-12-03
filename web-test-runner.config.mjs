@@ -30,8 +30,6 @@ const config = {
   files: [
     // './src/tests/**/*.test.ts',
 
-    // './src/tests/**/iframe.test.ts',
-
     './src/tests/**/methods-add.test.ts',
     './src/tests/**/methods-disconnect.test.ts',
     './src/tests/**/methods-match.test.ts',
@@ -50,6 +48,8 @@ const config = {
     './src/tests/**/usages-popstate.test.ts',
     './src/tests/**/usages-route-handler.test.ts',
     './src/tests/**/usages-route-match.test.ts',
+
+    './src/tests/helpers/*.test.ts',
   ],
   nodeResolve: true,
   plugins: [

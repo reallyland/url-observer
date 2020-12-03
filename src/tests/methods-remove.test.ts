@@ -2,9 +2,9 @@ import { assert } from '@esm-bundle/chai';
 
 import { routes } from './config.js';
 import type { URLObserverWithDebug } from './custom_test_typings.js';
-import { historyFixture } from './helpers/history-fixture.js';
-import { initObserver } from './helpers/init-observer.js';
-import { toResult } from './helpers/to-result.js';
+import { historyFixture } from './utils/history-fixture.js';
+import { initObserver } from './utils/init-observer.js';
+import { toResult } from './utils/to-result.js';
 
 describe('methods-remove', () => {
   const observers: Set<URLObserverWithDebug> = new Set();

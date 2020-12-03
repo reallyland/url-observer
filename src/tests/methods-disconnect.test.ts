@@ -3,9 +3,13 @@ import { assert } from '@esm-bundle/chai';
 import { popStateEventKey, pushStateEventKey } from '../constants.js';
 import { routes } from './config.js';
 import type { URLObserverWithDebug } from './custom_test_typings.js';
-import { historyFixture } from './helpers/history-fixture.js';
-import { initObserver } from './helpers/init-observer.js';
-import { TriggerEventListeners, triggerEvents, TriggerEventsEvents } from './helpers/trigger-event.js';
+import { historyFixture } from './utils/history-fixture.js';
+import { initObserver } from './utils/init-observer.js';
+import {
+  TriggerEventListeners,
+  triggerEvents,
+  TriggerEventsEvents,
+} from './utils/trigger-event.js';
 
 describe('methods-disconnect', () => {
   const observers: Set<URLObserverWithDebug> = new Set();

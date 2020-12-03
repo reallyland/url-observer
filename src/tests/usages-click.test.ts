@@ -5,12 +5,12 @@ import type { URLChangedStatus } from '../custom_typings.js';
 import type { URLObserverEntry } from '../url-observer-entry.js';
 import { routes } from './config.js';
 import type { URLObserverWithDebug } from './custom_test_typings.js';
-import { appendElement } from './helpers/append-element.js';
-import { appendLink } from './helpers/append-link.js';
-import { appendShadowElement } from './helpers/append-shadow-element.js';
-import { historyFixture } from './helpers/history-fixture.js';
-import { initObserver } from './helpers/init-observer.js';
-import { waitForEvent } from './helpers/wait-for-event.js';
+import { appendElement } from './utils/append-element.js';
+import { appendLink } from './utils/append-link.js';
+import { appendShadowElement } from './utils/append-shadow-element.js';
+import { historyFixture } from './utils/history-fixture.js';
+import { initObserver } from './utils/init-observer.js';
+import { waitForEvent } from './utils/wait-for-event.js';
 import { pageClick } from './wtr-helpers/page-click.js';
 
 describe('usages-click', () => {

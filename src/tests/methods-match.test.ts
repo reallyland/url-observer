@@ -3,10 +3,10 @@ import { assert } from '@esm-bundle/chai';
 import { pushStateEventKey } from '../constants.js';
 import { routes } from './config.js';
 import type { URLObserverWithDebug } from './custom_test_typings.js';
-import { appendLink } from './helpers/append-link.js';
-import { historyFixture } from './helpers/history-fixture.js';
-import { initObserver } from './helpers/init-observer.js';
-import { waitForEvent } from './helpers/wait-for-event.js';
+import { appendLink } from './utils/append-link.js';
+import { historyFixture } from './utils/history-fixture.js';
+import { initObserver } from './utils/init-observer.js';
+import { waitForEvent } from './utils/wait-for-event.js';
 import { pageClick } from './wtr-helpers/page-click.js';
 
 describe('methods-match', () => {
