@@ -1,6 +1,6 @@
 import type { MockRecord } from './history-mock.js';
 
-export function historyFixture(url?: string, type?: MockRecord['type']) {
+export function historyFixture(url?: string, type?: MockRecord['type']): () => void {
   const originalUrl = url ?? window.location.href;
 
   return function restore() {

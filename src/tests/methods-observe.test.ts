@@ -48,7 +48,7 @@ describe('methods-observe', () => {
   it(`observes with non-array routes`, () => {
     const observer = init();
 
-    observer.observe(null as unknown as any, {
+    observer.observe(null as never, {
       debug: true,
     });
 

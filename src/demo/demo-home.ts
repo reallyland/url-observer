@@ -5,6 +5,7 @@ import {
   customElement,
   html,
   LitElement,
+  TemplateResult,
 } from 'lit-element';
 
 const $name = 'demo-home';
@@ -23,7 +24,7 @@ export class DemoHome extends LitElement {
     `,
   ];
 
-  protected render() {
+  protected render(): TemplateResult {
     return html`
   <h2>Home</h2>
     `;

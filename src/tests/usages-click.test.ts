@@ -349,20 +349,20 @@ describe('usages-click', () => {
 
       window.addEventListener('message', onMessage);
     }
-    const frameReadyTask = new Promise<string>(y => setupMessageListener(y));
+    const frameReadyTask = new Promise<string>(resolve => setupMessageListener(resolve));
 
     document.body.appendChild(frame);
 
     const readyMessage = await frameReadyTask;
-    const observeReadyMessage = await new Promise((y) => {
-      setupMessageListener(y);
+    const observeReadyMessage = await new Promise((resolve) => {
+      setupMessageListener(resolve);
       frame.contentWindow?.postMessage('observe', '*');
     });
 
     const linkTargets = ['_parent', '_top'];
     for (const linkTarget of linkTargets) {
-      const msg = await new Promise<string>((y) => {
-        setupMessageListener(y);
+      const msg = await new Promise<string>((resolve) => {
+        setupMessageListener(resolve);
         frame.contentWindow?.postMessage(`click:${linkTarget}`, '*');
       });
 
@@ -372,8 +372,8 @@ describe('usages-click', () => {
     const {
       changes,
       records,
-    } = await new Promise<A>((y) => {
-      setupMessageListener<A>(y, true);
+    } = await new Promise<A>((resolve) => {
+      setupMessageListener<A>(resolve, true);
       frame.contentWindow?.postMessage('changes', '*');
     });
 
@@ -468,12 +468,12 @@ describe('usages-click', () => {
       routes: Object.values(routes),
     });
 
-    const linkClicked = new Promise<void>((y) => {
+    const linkClicked = new Promise<void>((resolve) => {
       window.addEventListener('click', function onClick(ev: MouseEvent) {
         ev.preventDefault();
         removeLink();
         window.removeEventListener('click', onClick);
-        y();
+        resolve();
       });
     });
 
@@ -497,7 +497,7 @@ describe('usages-click', () => {
     const observer = init({
       routes: Object.values(routes),
     });
-    let result: string = '';
+    let result = '';
 
     observer.add({
       pathRegExp: routes.section,
@@ -644,21 +644,21 @@ describe('usages-click', () => {
       }
 
       const { removeLink } = appendLink(newUrl);
-      const linkClicked = await new Promise<boolean>(async (y) => {
+      const linkClicked = await new Promise<boolean>(async (resolve) => {
         let clickTimer = -1;
 
         const onPreventClick = (ev: MouseEvent) => {
           window.clearTimeout(clickTimer);
           ev.preventDefault();
           window.removeEventListener('click', onPreventClick);
-          y(true);
+          resolve(true);
         };
 
         window.addEventListener('click', onPreventClick);
 
         clickTimer = window.setTimeout(() => {
           window.removeEventListener('click', onPreventClick);
-          y(false);
+          resolve(false);
         }, 2e3);
 
         await pageClick(`a[href="${newUrl}"]`, {

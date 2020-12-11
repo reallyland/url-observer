@@ -7,7 +7,7 @@ type Route = 'pages' | 'result';
 const $w = window;
 export const routes: Record<Route, RegExp> = {
   pages: /^\/(?<page>(about|home|result)?)$/i,
-  result: /^\/(?<page>result)\/?(?<result>[^\/]*)$/i,
+  result: /^\/(?<page>result)\/?(?<result>[^/]*)$/i,
 };
 // export const routes = {
 //   pages: pathToRegexp('/(about|home|result)'),
