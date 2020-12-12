@@ -242,10 +242,10 @@ export class URLObserver {
       beforeRouteHandlers,
       params,
     } = findMatchedRoute(this.#routes, {
-      matcherCallback: this.#matcherCallback,
       scope,
       status,
-      url
+      url,
+      matcherCallback: this.#matcherCallback,
     });
 
     if (beforeRouteHandlers) {
@@ -294,10 +294,10 @@ export class URLObserver {
     if (this.#callback) this.#callback(this.#entryList, this);
 
     const { found, params } = findMatchedRoute(this.#routes, {
-      matcherCallback: this.#matcherCallback,
       scope,
       status,
       url,
+      matcherCallback: this.#matcherCallback,
     });
 
     $w.dispatchEvent(

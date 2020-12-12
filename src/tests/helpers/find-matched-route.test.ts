@@ -1,6 +1,6 @@
 import { assert } from '@esm-bundle/chai';
 
-import type { FindMatchedRouteResult, RouteEvent, Routes } from '../../custom_typings.js';
+import type { FindMatchedRouteResult, Routes } from '../../custom_typings.js';
 import { findMatchedRoute } from '../../helpers/find-matched-route.js';
 import { urlParamMatcher } from '../../helpers/url-param-matcher.js';
 
@@ -65,8 +65,8 @@ describe('find-matched-route', () => {
         {
           ...defaultExpected,
           pathRegExp: allRoutes.page,
-          url: 'https://example.com/test'
-        }
+          url: 'https://example.com/test',
+        },
       ],
       [
         '/test/123',
@@ -74,8 +74,8 @@ describe('find-matched-route', () => {
           ...defaultExpected,
           params: { subPage: '123' },
           pathRegExp: allRoutes.subPage,
-          url: 'https://example.com/test/123'
-        }
+          url: 'https://example.com/test/123',
+        },
       ],
       [
         '/test/123/456',
@@ -84,7 +84,7 @@ describe('find-matched-route', () => {
           params: { section: '456', subPage: '123' },
           pathRegExp: allRoutes.section,
           url: 'https://example.com/test/123/456',
-        }
+        },
       ],
       [
         '/test/123/456/789',
@@ -93,7 +93,7 @@ describe('find-matched-route', () => {
           params: { section: '456', subPage: '123', subSection: '789' },
           pathRegExp: allRoutes.subSection,
           url: 'https://example.com/test/123/456/789',
-        }
+        },
       ],
       [
         '/test/123/456/789/0ab',
@@ -101,7 +101,7 @@ describe('find-matched-route', () => {
           ...defaultExpected,
           pathRegExp: allRoutes.page2,
           url: 'https://example.com/test/123/456/789/0ab',
-        }
+        },
       ],
       [
         '/test-1',
@@ -109,7 +109,7 @@ describe('find-matched-route', () => {
           ...defaultExpected,
           pathRegExp: allRoutes.page2,
           url: 'https://example.com/test-1',
-        }
+        },
       ],
       [
         '/test-1/123',
@@ -117,7 +117,7 @@ describe('find-matched-route', () => {
           ...defaultExpected,
           pathRegExp: allRoutes.page2,
           url: 'https://example.com/test-1/123',
-        }
+        },
       ],
       [
         '/page',
@@ -127,7 +127,7 @@ describe('find-matched-route', () => {
           found: false,
           pathRegExp: undefined,
           url: 'https://example.com/page',
-        }
+        },
       ],
       [
         '/page/123',
@@ -137,7 +137,7 @@ describe('find-matched-route', () => {
           found: false,
           pathRegExp: undefined,
           url: 'https://example.com/page/123',
-        }
+        },
       ],
     ]);
   });

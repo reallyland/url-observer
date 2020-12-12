@@ -27,12 +27,12 @@ export function findMatchedRoute<T extends Record<string, unknown>>(
   const found = match != null;
 
   return {
-    beforeRouteHandlers: match?.beforeRouteHandlers,
     found,
-    params: match && matcherCallback ? matcherCallback<T>(pathname, match.pathRegExp) : {} as T,
-    pathRegExp: match?.pathRegExp,
     scope,
     status,
+    beforeRouteHandlers: match?.beforeRouteHandlers,
+    params: match && matcherCallback ? matcherCallback<T>(pathname, match.pathRegExp) : {} as T,
+    pathRegExp: match?.pathRegExp,
     url: href,
   };
 }
