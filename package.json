@@ -53,7 +53,7 @@
     "clean": "shx rm -rf .*cache *.log coverage/ dist/ logs/",
     "postinstall": "npm dedupe",
     "lint": "eslint src/**/*.ts --ext .js,.jsx,.ts,.tsx",
-    "lint:build": "npm run lint:debug -- --config .eslintrc.build.json",
+    "lint:build": "npm run lint -- --config .eslintrc.build.json",
     "prepublishOnly": "npm run clean && npm run lint:build && npm run build",
     "test": "wtr",
     "ts": "tsc",
