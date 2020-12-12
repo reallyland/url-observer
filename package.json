@@ -48,13 +48,13 @@
     "dist/helpers/*.js"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "//build": "tsc -p tsconfig.build.json",
     "check": "package-check",
-    "clean": "shx rm -rf .*cache *.log dist/ logs/",
+    "clean": "shx rm -rf .*cache *.log coverage/ dist/ logs/",
     "postinstall": "npm dedupe",
-    "lint": "npm run lint:debug -- --config .eslintrc.prod.json",
-    "lint:debug": "eslint src/**/*.ts --ext .js,.jsx,.ts,.tsx",
-    "prepublishOnly": "npm run clean && npm run lint && npm run build",
+    "lint": "eslint src/**/*.ts --ext .js,.jsx,.ts,.tsx",
+    "lint:build": "npm run lint:debug -- --config .eslintrc.build.json",
+    "prepublishOnly": "npm run clean && npm run lint:build && npm run build",
     "test": "wtr",
     "ts": "tsc",
     "watch": "wtr --watch",
@@ -62,7 +62,7 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "npm run check && npm run lint && tsc --noEmit"
+      "pre-commit": "npm run check && npm run lint:build && tsc --noEmit"
     }
   },
   "dependencies": {
