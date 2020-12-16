@@ -8,7 +8,7 @@ import {
 } from 'lit-element';
 
 import { cache } from 'lit-html/directives/cache.js';
-import { pushStateEventKey } from '../constants.js';
+import { linkScopeKey, pushStateEventKey } from '../constants.js';
 import type { Page } from './custom_demo_typings.js';
 import { routes } from './demo.js';
 import { router } from './router.js';
@@ -118,7 +118,7 @@ export class DemoResult extends LitElement {
 
 declare global {
   interface HTMLAnchorElement {
-    scope: string;
+    [linkScopeKey]: string;
   }
 
   interface HTMLElementTagNameMap {

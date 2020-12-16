@@ -89,19 +89,19 @@ observer.add({
    * A scoped route handler enables multiple before route handler to be registered to the
    * same route. E.g.
    * 
-   * A .scope property or `scope` attribute can be set in an anchor tag so that URLObserver
+   * A .data-scope property or `data-scope` attribute can be set in an anchor tag so that URLObserver
    * knows which before route handler it needs to trigger before navigating to a new URL.
    * 
-   * When .scope (or `scope`) is an empty string, it defaults to ':default', which is the 
+   * When .data-scope (or `data-scope`) is an empty string, it defaults to ':default', which is the 
    * default scope value when registering a route unless specified.
    * 
    * 1. <a href="/test/123">/test/456</a>
    *    - No before route handler will be triggered on link click as it is not a scoped link.
    * 
-   * 2. <a href="/test/123" scope>/test/123</a>
+   * 2. <a href="/test/123" data-scope>/test/123</a>
    *    - Only before route handler registered to ':default' scope will be triggered.
    * 
-   * 3. <a href="/test/123" scope="456">/test/456</a>
+   * 3. <a href="/test/123" data-scope="456">/test/456</a>
    *    - Only before route handler registered to '456' scope will be triggered.
    * 
    */

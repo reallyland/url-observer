@@ -1,6 +1,6 @@
 import { assert } from '@esm-bundle/chai';
 
-import { pushStateEventKey } from '../constants.js';
+import { linkScopeKey, pushStateEventKey } from '../constants.js';
 import type { URLChangedStatus } from '../custom_typings.js';
 import { routes } from './config.js';
 import type { URLObserverWithDebug } from './custom_test_typings.js';
@@ -64,12 +64,12 @@ describe('usages-route-handler', () => {
     type A = [string, Record<string, string>][];
 
     const newUrlOptions: A = [
-      ['/test/123', { scope: ':default' }],
-      ['/test/123a', { scope: '' }],
-      ['/test/456', { ['.scope']: ':default' }],
-      ['/test/456a', { ['.scope']: '' }],
-      ['/test/789', { scope: 'test-1' }],
-      ['/test/789a', { ['.scope']: 'test-1' }],
+      ['/test/123', { [linkScopeKey]: ':default' }],
+      ['/test/123a', { [linkScopeKey]: '' }],
+      ['/test/456', { [`.${linkScopeKey}`]: ':default' }],
+      ['/test/456a', { [`.${linkScopeKey}`]: '' }],
+      ['/test/789', { [linkScopeKey]: 'test-1' }],
+      ['/test/789a', { [`.${linkScopeKey}`]: 'test-1' }],
     ];
 
     const observer = init({
@@ -86,7 +86,7 @@ describe('usages-route-handler', () => {
           result.push([newUrl, newUrlScope]);
           return true;
         },
-        scope: newUrlScope?.scope ?? newUrlScope?.['.scope'],
+        scope: newUrlScope?.[linkScopeKey] ?? newUrlScope?.[`.${linkScopeKey}`],
       });
 
       await waitForEvent(pushStateEventKey, async () => {
@@ -109,7 +109,7 @@ describe('usages-route-handler', () => {
   });
 
   it(
-    `does not run before route handler when updating history manually without defined scope`,
+    `does not run before route handler when updating history manually without defined data-scope`,
     async () => {
       type A = [string, string | undefined][];
 
@@ -203,12 +203,12 @@ describe('usages-route-handler', () => {
       type A = [string, Record<string, string>];
 
       const newUrlOptions: A[] = [
-        ['/test/123', { scope: ':default' }],
-        ['/test/123a', { scope: '' }],
-        ['/test/456', { ['.scope']: ':default' }],
-        ['/test/456a', { ['.scope']: '' }],
-        ['/test/789', { scope: 'test-1' }],
-        ['/test/789a', { ['.scope']: 'test-1' }],
+        ['/test/123', { [linkScopeKey]: ':default' }],
+        ['/test/123a', { [linkScopeKey]: '' }],
+        ['/test/456', { [`.${linkScopeKey}`]: ':default' }],
+        ['/test/456a', { [`.${linkScopeKey}`]: '' }],
+        ['/test/789', { [linkScopeKey]: 'test-1' }],
+        ['/test/789a', { [`.${linkScopeKey}`]: 'test-1' }],
       ];
 
       const observer = init({
@@ -228,7 +228,7 @@ describe('usages-route-handler', () => {
 
             return false;
           },
-          scope: newUrlScope.scope ?? newUrlScope?.['.scope'],
+          scope: newUrlScope?.[linkScopeKey] ?? newUrlScope?.[`.${linkScopeKey}`],
         });
 
         const ev = await waitForEvent(pushStateEventKey, async () => {

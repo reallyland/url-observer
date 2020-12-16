@@ -6,6 +6,7 @@ import {
   html,
   LitElement,
 } from 'lit-element';
+import type { linkScopeKey } from '../constants.js';
 import { router } from './router';
 
 const $name = 'demo-not-found';
@@ -38,7 +39,7 @@ export class DemoNotFound extends LitElement {
 
 declare global {
   interface HTMLAnchorElement {
-    scope: string;
+    [linkScopeKey]: string;
   }
 
   interface HTMLElementTagNameMap {
