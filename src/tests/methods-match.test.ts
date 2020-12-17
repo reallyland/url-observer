@@ -65,4 +65,45 @@ describe('methods-match', () => {
     });
   });
 
+  it(`finds a matched route with a 'tail'`, async () => {
+    interface A extends Record<string, unknown> {
+      subTest: string;
+    }
+
+    const newUrl = '/sub-test/123';
+
+    const observer = init({
+      routes: [
+        /^\/test\/123\/sub-test\/(?<test>[^/]+)$/i,
+        /^\/sub-test\/(?<subTest>[^/]+)$/i,
+      ],
+    });
+
+    const result = observer.match<A>(newUrl);
+
+    assert.deepStrictEqual(result, {
+      found: true,
+      params: {
+        subTest: '123',
+      },
+    });
+  });
+
+  it(`finds no matched route with a 'tail'`, async () => {
+    const newUrl = '/sub-test/123';
+
+    const observer = init({
+      routes: [
+        /^\/test\/123\/sub-test\/(?<test>[^/]+)$/i,
+      ],
+    });
+
+    const result = observer.match(newUrl);
+
+    assert.deepStrictEqual(result, {
+      found: false,
+      params: {},
+    });
+  });
+
 });

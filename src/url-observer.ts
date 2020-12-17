@@ -84,8 +84,8 @@ export class URLObserver {
     this.#entryList.deleteEntries();
   }
 
-  public match<T extends Record<string, unknown>>(): MatchedRoute<T> {
-    const { pathname } = $l;
+  public match<T extends Record<string, unknown> = Record<string, unknown>>(tail?: string): MatchedRoute<T> {
+    const pathname= tail || $l.pathname;
 
     for (const [, { pathRegExp }] of this.#routes) {
       if (pathRegExp.test(pathname)) {
