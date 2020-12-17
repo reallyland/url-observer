@@ -12,14 +12,14 @@ An URLObserver watches all history updates in a browser whenever:
 
 ### Scoped link
 
-Scoped link is introduced to allow multiple before route handlers to be registered to a single route. With different `scope` value, the corresponding route handler will be triggered when a new URL is ready to navigated. The route handler needs to return `true` to navigate to new URL.
+Scoped link is introduced to allow multiple before route handlers to be registered to a single route. With different `data-scope` value, the corresponding route handler will be triggered when a new URL is ready to navigated. The route handler needs to return `true` to navigate to new URL.
 
 ```html
-<!-- Scoped link with scope=123 -->
-<a href="/test/123" scope="123">/test/123</a>
+<!-- Scoped link with data-scope=123 -->
+<a href="/test/123" data-scope="123">/test/123</a>
 
-<!-- Scoped link with scope=:default -->
-<a href="/test/456" scope>/test/456</a>
+<!-- Scoped link with data-scope=:default -->
+<a href="/test/456" data-scope>/test/456</a>
 
 <!-- Normal link -->
 <a href="/test/789">/test/789</a>
@@ -30,7 +30,7 @@ const routes = {
   test: /^\/test\/(?<test>[^\/]+)$/i,
 };
 
-/** This will get triggered only when clicking a[scope="123"] */
+/** This will get triggered only when clicking a[data-scope="123"] */
 observer.add({
   handleEvent() {
     return true;
@@ -39,7 +39,7 @@ observer.add({
   scope: '123',
 });
 
-/** This will get triggered only when clicking a[scope=""] */
+/** This will get triggered only when clicking a[data-scope=""] */
 observer.add({
   handleEvent() {
     return true;
@@ -185,12 +185,12 @@ Dynamically add new route or a before route handler to an registered route.
    * To dynamically add new scoped before route handler to existing route.
    * Note that scope needs to be set in the anchor tag that needs to trigger the route handler, e.g.
    * 
-   * <a href="/test" scope=":test">/test</a>
+   * <a href="/test" data-scope=":test">/test</a>
    */
   observer.add({
     handleEvent: () => true,
     pathRegExp: /^\/test$\//i,
-    scoped: ':test',
+    scope: ':test',
   });
   ```
 

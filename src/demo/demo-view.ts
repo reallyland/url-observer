@@ -11,7 +11,7 @@ import {
 import { cache } from 'lit-html/directives/cache.js';
 import { until } from 'lit-html/directives/until.js';
 
-import { popStateEventKey, pushStateEventKey } from '../constants.js';
+import { linkScopeKey, popStateEventKey, pushStateEventKey } from '../constants.js';
 import type { RouteEvent } from '../custom_typings.js';
 import type { DialogClosedEvent, Page, RouteMatch } from './custom_demo_typings.js';
 import { routes } from './demo.js';
@@ -104,16 +104,16 @@ export class DemoView extends LitElement {
 
   <ul>
     <li>
-      <a href="/" scope="${$name}">Home</a>
+      <a href="/" data-scope="${$name}">Home</a>
     </li>
     <li>
-      <a href="${hrefWithQueryAndHash}" scope="${$name}">Result with ?query and #hash</a>
+      <a href="${hrefWithQueryAndHash}" data-scope="${$name}">Result with ?query and #hash</a>
     </li>
     <li>
-      <a href="/about" scope="${$name}">About</a>
+      <a href="/about" data-scope="${$name}">About</a>
     </li>
     <li>
-      <a href="/not-found" scope="${$name}">Not Found</a>
+      <a href="/not-found" data-scope="${$name}">Not Found</a>
     </li>
   </ul>
 
@@ -152,7 +152,7 @@ export class DemoView extends LitElement {
 
 declare global {
   interface HTMLAnchorElement {
-    scope: string;
+    [linkScopeKey]: string;
   }
 
   interface HTMLElementTagNameMap {

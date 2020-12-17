@@ -7,6 +7,7 @@ import {
   LitElement,
   TemplateResult,
 } from 'lit-element';
+import type { linkScopeKey } from '../constants.js';
 
 const $name = 'demo-about';
 
@@ -33,7 +34,7 @@ export class DemoAbout extends LitElement {
 
 declare global {
   interface HTMLAnchorElement {
-    scope: string;
+    [linkScopeKey]: string;
   }
 
   interface HTMLElementTagNameMap {

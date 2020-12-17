@@ -1,4 +1,4 @@
-import { popStateEventKey, pushStateEventKey } from './constants.js';
+import { linkScopeKey, popStateEventKey, pushStateEventKey } from './constants.js';
 import type {
   MatchedRoute,
   RouteEvent,
@@ -204,8 +204,8 @@ export class URLObserver {
 
     await this._urlChangedWithBeforeRoute({
       url,
-      scope: Object.keys(anchor).includes('scope') || anchor.hasAttribute('scope') ?
-        anchor.scope || anchor.getAttribute('scope') || ':default' :
+      scope: Object.keys(anchor).includes(linkScopeKey) || anchor.hasAttribute(linkScopeKey) ?
+        anchor[linkScopeKey] || anchor.getAttribute(linkScopeKey) || ':default' :
         '',
       status: 'click',
     });
@@ -329,7 +329,7 @@ export class URLObserver {
 declare global {
   // #region HTML element type extensions
   interface HTMLAnchorElement {
-    scope: string;
+    [linkScopeKey]: string;
   }
   // #endregion HTML element type extensions
 

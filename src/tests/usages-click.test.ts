@@ -1,6 +1,6 @@
 import { assert } from '@esm-bundle/chai';
 
-import { pushStateEventKey } from '../constants.js';
+import { linkScopeKey, pushStateEventKey } from '../constants.js';
 import type { URLChangedStatus } from '../custom_typings.js';
 import type { URLObserverEntry } from '../url-observer-entry.js';
 import { routes } from './config.js';
@@ -493,7 +493,7 @@ describe('usages-click', () => {
   it(`does not update URL when before route handler returns false`, async () => {
     const newUrl = '/test/123';
 
-    const { removeLink } = appendLink(newUrl, { scope: '' });
+    const { removeLink } = appendLink(newUrl, { [linkScopeKey]: '' });
     const observer = init({
       routes: Object.values(routes),
     });
@@ -526,10 +526,10 @@ describe('usages-click', () => {
 
   it(`updates URL with before route handler`, async () => {
     const anchorOptions: [string, Record<string, string>][] = [
-      ['/test/123', { '.scope': '' }],
-      ['/test/456', { scope: '' }],
-      ['/test/789', { '.scope': 'test' }],
-      ['/test/abc', { scope: 'test' }],
+      ['/test/123', { [`.${linkScopeKey}`]: '' }],
+      ['/test/456', { [linkScopeKey]: '' }],
+      ['/test/789', { [`.${linkScopeKey}`]: 'test' }],
+      ['/test/abc', { [linkScopeKey]: 'test' }],
     ];
 
     const observer = init({
@@ -547,7 +547,7 @@ describe('usages-click', () => {
           result.push(newUrlMatch);
           return true;
         },
-        scope: newUrlMatch?.scope ?? newUrlMatch?.['.scope'],
+        scope: newUrlMatch?.[linkScopeKey] ?? newUrlMatch?.[`.${linkScopeKey}`],
       });
 
       await waitForEvent('click', async () => {
