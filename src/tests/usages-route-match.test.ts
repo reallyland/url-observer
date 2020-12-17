@@ -10,7 +10,7 @@ import { initObserver } from './utils/init-observer.js';
 import { waitForEvent } from './utils/wait-for-event.js';
 import { pageClick } from './wtr-helpers/page-click.js';
 
-function normalizeEventDetailUrl<T>(detail?: RouteEvent<T>): RouteEvent<T> {
+function normalizeEventDetailUrl<T extends Record<string, unknown>>(detail?: RouteEvent<T>): RouteEvent<T> {
   if (detail == null) return {} as RouteEvent<T>;
 
   const url = new URL(detail.url);

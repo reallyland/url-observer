@@ -5,6 +5,7 @@ import {
   customElement,
   html,
   LitElement,
+  TemplateResult,
 } from 'lit-element';
 import type { linkScopeKey } from '../constants.js';
 import { router } from './router';
@@ -25,7 +26,7 @@ export class DemoNotFound extends LitElement {
     `,
   ];
 
-  protected render() {
+  protected render(): TemplateResult {
     return html`
   <h2>Not Found</h2>
   <mwc-button @click=${this._goHome}>Go to home</mwc-button>

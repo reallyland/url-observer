@@ -20,17 +20,17 @@ const $l = $w.location;
 
 export class URLObserver {
   #callback?: URLObserverCallbacks['callback'];
-  #connected: boolean = false;
-  #debug: boolean = false;
+  #connected = false;
+  #debug = false;
   /**
    * dwellTime is required to prevent pushState IPC storm DoS.
    *
    * @see {@link https://codereview.chromium.org/2972073002|Issue 2972073002}
    * for more in-depth issue.
    */
-  #dwellTime: number = 2e3;
+  #dwellTime = 2e3;
   #entryList: URLObserverEntryList = new URLObserverEntryList();
-  #lastChangedAt: number = -1;
+  #lastChangedAt = -1;
   #matcherCallback: URLObserverCallbacks['matcherCallback'] = urlParamMatcher;
   #routes: Routes = new Map();
 
@@ -48,7 +48,7 @@ export class URLObserver {
     return 'URLObserver';
   }
 
-  public add<T>(option: RouteOption<T>): void {
+  public add<T extends Record<string, unknown>>(option: RouteOption<T>): void {
     const {
       handleEvent,
       pathRegExp,
@@ -84,7 +84,7 @@ export class URLObserver {
     this.#entryList.deleteEntries();
   }
 
-  public match<T>(): MatchedRoute<T> {
+  public match<T extends Record<string, unknown>>(): MatchedRoute<T> {
     const { pathname } = $l;
 
     for (const [, { pathRegExp }] of this.#routes) {
@@ -245,7 +245,7 @@ export class URLObserver {
         beforeRouteHandlers,
         pathRegExp,
       } = route;
-      const params = this.#matcherCallback<Record<string, any>>(url.pathname, pathRegExp);
+      const params = this.#matcherCallback<Record<string, unknown>>(url.pathname, pathRegExp);
       const beforeRouteHandler = beforeRouteHandlers.get(scope);
 
       if (beforeRouteHandler) return beforeRouteHandler(params, status);
@@ -334,8 +334,8 @@ declare global {
   // #endregion HTML element type extensions
 
   interface WindowEventMap {
-    [popStateEventKey]: CustomEvent<RouteEvent<any>>;
-    [pushStateEventKey]: CustomEvent<RouteEvent<any>>;
+    [popStateEventKey]: CustomEvent<RouteEvent<Record<string, unknown>>>;
+    [pushStateEventKey]: CustomEvent<RouteEvent<Record<string, unknown>>>;
   }
 }
 

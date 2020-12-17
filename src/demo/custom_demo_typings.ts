@@ -2,7 +2,7 @@ export interface DialogClosedEvent {
   action: 'confirm' | 'dismiss';
 }
 
-export interface RouteMatch {
+export interface RouteMatch extends Record<string, unknown> {
   page: Page;
 }
 

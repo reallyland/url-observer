@@ -12,7 +12,7 @@ export function appendElement<T extends HTMLElement>(
   if (option) {
     for (const [k, v] of Object.entries(option)) {
       if (k.startsWith('.')) {
-        (el as any)[k.slice(1)] = v;
+        Object.assign(el, { [k.slice(1)]: v });
       } else {
         el.setAttribute(k, typeof(v) === 'string' ? v : JSON.stringify(v));
       }

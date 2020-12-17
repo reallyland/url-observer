@@ -17,7 +17,7 @@ describe('url-param-matcher', () => {
   });
 
   it('matches no URL params', () => {
-    const result = urlParamMatcher<{}>('/test/123', routes.test);
+    const result = urlParamMatcher<Record<string, never>>('/test/123', routes.test);
 
     assert.deepEqual(result, {});
   });

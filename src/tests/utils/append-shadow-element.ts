@@ -15,7 +15,7 @@ export function appendShadowElement<T extends HTMLElement>(
   if (option) {
     for (const [k, v] of Object.entries(option)) {
       if (k.startsWith('.')) {
-        (element as any)[k.slice(1)] = v;
+        Object.assign(element, { [k.slice(1)]: v });
       } else {
         element.setAttribute(k, String(v));
       }

@@ -5,6 +5,7 @@ import {
   customElement,
   html,
   LitElement,
+  TemplateResult,
 } from 'lit-element';
 import type { linkScopeKey } from '../constants.js';
 
@@ -24,7 +25,7 @@ export class DemoAbout extends LitElement {
     `,
   ];
 
-  protected render() {
+  protected render(): TemplateResult {
     return html`
   <h2>About</h2>
     `;

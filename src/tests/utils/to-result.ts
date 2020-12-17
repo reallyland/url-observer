@@ -1,6 +1,6 @@
 import type { Routes, RouteValue } from '../../custom_typings.js';
 
-export function toResult<T extends [string, any] = [string, unknown]>(
+export function toResult<T extends [string, unknown] = [string, unknown]>(
   routes: Routes,
   cb: (handler: RouteValue['beforeRouteHandlers']) => unknown
 ): T[] {

@@ -14,9 +14,9 @@ const $w = window;
 export function triggerEvents(listeners: TriggerEventListeners) {
   return async function triggerEventsFn(
     eventName: TriggerEventsName,
-    disconnected: boolean = false
+    disconnected = false
   ): Promise<void> {
-    return new Promise(async (y) => {
+    return new Promise(async (resolve) => {
       switch (eventName) {
         case 'click': {
           const newUrl = `/test-${new Date().toJSON()}`;
@@ -30,7 +30,7 @@ export function triggerEvents(listeners: TriggerEventListeners) {
             $w.removeEventListener(pushStateEventKey, onClick);
             $w.removeEventListener('click', onPreventClick);
             removeLink();
-            y();
+            resolve();
           };
           const onPreventClick = (ev: MouseEvent) => {
             if (ev.defaultPrevented) return;
@@ -51,7 +51,7 @@ export function triggerEvents(listeners: TriggerEventListeners) {
             $w.removeEventListener(pushStateEventKey, onClick);
             $w.removeEventListener('click', onPreventClick);
             removeLink();
-            y();
+            resolve();
           }, 2e3);
 
           await pageClick(`a[href="${newUrl}"]`, {
@@ -67,7 +67,7 @@ export function triggerEvents(listeners: TriggerEventListeners) {
             $w.clearTimeout(hashchangeTimer);
             (listeners.hashchange ??= []).push('hashchange');
             $w.removeEventListener(pushStateEventKey, onHashChange);
-            y();
+            resolve();
           };
 
           $w.addEventListener(pushStateEventKey, onHashChange);
@@ -75,7 +75,7 @@ export function triggerEvents(listeners: TriggerEventListeners) {
           hashchangeTimer = $w.setTimeout(() => {
             (listeners.hashchange ??= []).push(null);
             $w.removeEventListener(pushStateEventKey, onHashChange);
-            y();
+            resolve();
           }, 2e3);
 
           $w.location.hash = `#test-${new Date().toJSON()}`;
@@ -89,7 +89,7 @@ export function triggerEvents(listeners: TriggerEventListeners) {
             $w.clearTimeout(popstateTimer);
             (listeners.popstate ??= []).push('popstate');
             $w.removeEventListener(popStateEventKey, onPopstate);
-            y();
+            resolve();
           };
 
           $w.addEventListener(popStateEventKey, onPopstate);
@@ -97,7 +97,7 @@ export function triggerEvents(listeners: TriggerEventListeners) {
           popstateTimer = $w.setTimeout(() => {
             (listeners.popstate ??= []).push(null);
             $w.removeEventListener(popStateEventKey, onPopstate);
-            y();
+            resolve();
           }, 2e3);
 
           $w.history.pushState({}, '', `/test-${new Date().toJSON()}`);

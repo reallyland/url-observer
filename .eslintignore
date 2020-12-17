@@ -1,0 +1,18 @@
+# dot files
+.*cache
+.build/
+.DS_Store
+.tmp/
+.vscode
+*.env
+*.tsbuildinfo
+
+# debug
+*.log*
+
+# folders
+coverage*/
+dist*/
+node_modules/
+
+# Do not ignore

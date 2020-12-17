@@ -1,5 +1,5 @@
 export interface MockRecord {
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   title: string;
   type: 'push' | 'replace';
   url: string;
@@ -7,7 +7,7 @@ export interface MockRecord {
 
 export class HistoryMock {
   private _mockRecords: Set<MockRecord> = new Set();
-  private _originalUrl: string = '/';
+  private _originalUrl = '/';
   private _pushState: History['pushState'] | null = null;
   private _replaceState: History['replaceState'] | null = null;
 
