@@ -69,8 +69,8 @@
   },
   "devDependencies": {
     "@esm-bundle/chai": "^4.1.5",
-    "@material/mwc-button": "^0.19.1",
-    "@material/mwc-dialog": "^0.19.1",
+    "@material/mwc-button": "^0.20.0",
+    "@material/mwc-dialog": "^0.20.0",
     "@reallyland/tsconfig": "^2.0.0",
     "@reallyland/tslint-config": "^1.1.1",
     "@skypack/package-check": "^0.2.2",
