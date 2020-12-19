@@ -238,14 +238,17 @@ export class URLObserver {
     status: URLChangedStatus,
     scope: string
   ): Promise<boolean> {
-    const route = findMatchedRoute(this.#routes, url.pathname);
+    const {
+      beforeRouteHandlers,
+      params,
+    } = findMatchedRoute(this.#routes, {
+      scope,
+      status,
+      url,
+      matcherCallback: this.#matcherCallback,
+    });
 
-    if (route) {
-      const {
-        beforeRouteHandlers,
-        pathRegExp,
-      } = route;
-      const params = this.#matcherCallback<Record<string, unknown>>(url.pathname, pathRegExp);
+    if (beforeRouteHandlers) {
       const beforeRouteHandler = beforeRouteHandlers.get(scope);
 
       if (beforeRouteHandler) return beforeRouteHandler(params, status);
@@ -290,22 +293,24 @@ export class URLObserver {
     /** Run observer callback if any */
     if (this.#callback) this.#callback(this.#entryList, this);
 
-    const foundRouteRegExp = findMatchedRoute(this.#routes, url.pathname)?.pathRegExp;
+    const { found, params } = findMatchedRoute(this.#routes, {
+      scope,
+      status,
+      url,
+      matcherCallback: this.#matcherCallback,
+    });
 
     $w.dispatchEvent(
-      new CustomEvent(
+      new CustomEvent<RouteEvent>(
         status === 'popstate' ? popStateEventKey : pushStateEventKey,
         {
           detail: {
+            found,
+            params,
             scope,
             status,
             url: fullUrl,
-            ...(
-              foundRouteRegExp ?
-                { found: true, params: this.#matcherCallback(url.pathname, foundRouteRegExp) } :
-                { found: false, params: {} }
-            ),
-          } as RouteEvent,
+          },
         }
       )
     );

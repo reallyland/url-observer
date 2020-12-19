@@ -3,6 +3,14 @@ import type { URLObserver } from './url-observer.js';
 
 export type Routes = Map<string, RouteValue>;
 
+export interface FindMatchedRouteResult<T extends Record<string, unknown>> extends
+  RouteEvent<T>,
+  Partial<RouteValue> {}
+
+export interface FindMatchedRouteOption extends
+  URLChangedOption,
+  Pick<URLObserverCallbacks, 'matcherCallback'> {}
+
 export type URLChangedStatus =
   | 'click'
   | 'hashchange'
