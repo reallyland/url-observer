@@ -24,10 +24,8 @@ export function findMatchedRoute<T extends Record<string, unknown>>(
     }
   }
 
-  const found = match != null;
-
   return {
-    found,
+    found: match != null,
     scope,
     status,
     beforeRouteHandlers: match?.beforeRouteHandlers,
