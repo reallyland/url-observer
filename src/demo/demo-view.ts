@@ -11,9 +11,9 @@ import {
 import { cache } from 'lit-html/directives/cache.js';
 import { until } from 'lit-html/directives/until.js';
 
-import { popStateEventKey, pushStateEventKey } from '../constants.js';
+import { linkScopeKey, popStateEventKey, pushStateEventKey } from '../constants.js';
 import type { RouteEvent } from '../custom_typings.js';
-import type { DialogClosedEvent, Page, RouteMatch as RouteMatch } from './custom_demo_typings.js';
+import type { DialogClosedEvent, Page, RouteMatch } from './custom_demo_typings.js';
 import { routes } from './demo.js';
 import { lazyImport } from './helpers/lazy-import.js';
 import { router } from './router.js';
@@ -26,13 +26,13 @@ export class DemoView extends LitElement {
   #updateNavigationPrompt!: (value: boolean) => Promise<void>;
 
   @property({ type: Boolean })
-  private _navigationPrompt: boolean = false;
+  private _navigationPrompt = false;
 
   @property({ type: Boolean })
-  private _navigationPromptOpen: boolean = false;
+  private _navigationPromptOpen = false;
 
   @property({ type: Boolean })
-  private _notFound: boolean = false;
+  private _notFound = false;
 
   @property({ type: String })
   private _page!: Page;
@@ -64,14 +64,14 @@ export class DemoView extends LitElement {
     this.#onLoad = ev => this._onLoad(ev);
   }
 
-  public disconnectedCallback() {
+  public disconnectedCallback(): void {
     super.disconnectedCallback();
 
-    $w.removeEventListener(popStateEventKey, this.#onLoad);
-    $w.removeEventListener(pushStateEventKey, this.#onLoad);
+    $w.removeEventListener(popStateEventKey, this.#onLoad as never);
+    $w.removeEventListener(pushStateEventKey, this.#onLoad as never);
   }
 
-  protected firstUpdated() {
+  protected firstUpdated(): void {
     router.add<RouteMatch>({
       pathRegExp: routes.pages,
       scope: $name,
@@ -92,26 +92,28 @@ export class DemoView extends LitElement {
       },
     });
 
-    $w.addEventListener(popStateEventKey, this.#onLoad);
-    $w.addEventListener(pushStateEventKey, this.#onLoad);
+    $w.addEventListener(popStateEventKey, this.#onLoad as never);
+    $w.addEventListener(pushStateEventKey, this.#onLoad as never);
   }
 
-  protected render() {
+  protected render(): TemplateResult {
+    const hrefWithQueryAndHash = '/result?search=hello world+foo?+bar&size=10&page=0#result';
+
     return html`
   <h1>Pages</h1>
 
   <ul>
     <li>
-      <a href="/" scope="${$name}">Home</a>
+      <a href="/" data-scope="${$name}">Home</a>
     </li>
     <li>
-      <a href="/result?search=hello world+foo?+bar&size=10&page=0#result" scope="${$name}">Result with ?query and #hash</a>
+      <a href="${hrefWithQueryAndHash}" data-scope="${$name}">Result with ?query and #hash</a>
     </li>
     <li>
-      <a href="/about" scope="${$name}">About</a>
+      <a href="/about" data-scope="${$name}">About</a>
     </li>
     <li>
-      <a href="/not-found" scope="${$name}">Not Found</a>
+      <a href="/not-found" data-scope="${$name}">Not Found</a>
     </li>
   </ul>
 
@@ -150,7 +152,7 @@ export class DemoView extends LitElement {
 
 declare global {
   interface HTMLAnchorElement {
-    scope: string;
+    [linkScopeKey]: string;
   }
 
   interface HTMLElementTagNameMap {

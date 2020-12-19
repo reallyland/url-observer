@@ -67,7 +67,7 @@ describe('methods-disconnect', () => {
 
         observer.disconnect();
 
-        await new Promise<void>(async (y) => {
+        await new Promise<void>(async (resolve) => {
           let clickTimer = -1;
 
           const onPopState = async () => {
@@ -86,7 +86,7 @@ describe('methods-disconnect', () => {
 
             window.removeEventListener(popStateEventKey, onPopState);
             window.removeEventListener(pushStateEventKey, onPushState);
-            y();
+            resolve();
           };
           const onPushState = async () => {
             window.clearTimeout(clickTimer);
@@ -107,7 +107,7 @@ describe('methods-disconnect', () => {
 
             window.removeEventListener(pushStateEventKey, onPushState);
             window.removeEventListener(popStateEventKey, onPopState);
-            y();
+            resolve();
           };
 
           window.addEventListener(popStateEventKey, onPopState);
@@ -117,7 +117,7 @@ describe('methods-disconnect', () => {
             (listeners[n] ?? []).push(null);
             window.removeEventListener(popStateEventKey, onPopState);
             window.removeEventListener(pushStateEventKey, onPushState);
-            y();
+            resolve();
           }, 2e3);
 
           await observer.updateHistory(`/test-${new Date().toJSON()}`);

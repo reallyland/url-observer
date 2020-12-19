@@ -10,9 +10,9 @@ describe('find-matched-route', () => {
   const allRoutes: Record<A, RegExp> = {
     page: /^\/test$/i,
     page2: /^\/test/i,
-    subPage: /^\/test\/(?<subPage>[^\/]+)$/i,
-    section: /^\/test\/(?<subPage>[^\/]+)\/(?<section>[^\/]+)$/i,
-    subSection: /^\/test\/(?<subPage>[^\/]+)\/(?<section>[^\/]+)\/(?<subSection>[^\/]+)$/i,
+    subPage: /^\/test\/(?<subPage>[^/]+)$/i,
+    section: /^\/test\/(?<subPage>[^/]+)\/(?<section>[^/]+)$/i,
+    subSection: /^\/test\/(?<subPage>[^/]+)\/(?<section>[^/]+)\/(?<subSection>[^/]+)$/i,
   };
   const routesMap: Routes = new Map();
 

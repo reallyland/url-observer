@@ -97,7 +97,7 @@ describe('usages-history', () => {
         observerOption: { dwellTime },
       });
 
-      if (dwellTime > 0) await new Promise(y => window.setTimeout(y, dwellTime));
+      if (dwellTime > 0) await new Promise(resolve => window.setTimeout(resolve, dwellTime));
 
       await waitForEvent(pushStateEventKey, async () => {
         await pageClick(`a[href="${newUrl}"]`, {

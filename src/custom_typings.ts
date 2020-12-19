@@ -18,19 +18,19 @@ export type URLChangedStatus =
   | 'manual'
   | 'popstate';
 
-export interface MatchedRoute<T extends Record<string, any> = Record<string, any>> {
+export interface MatchedRoute<T extends Record<string, unknown> = Record<string, unknown>> {
   found: boolean;
   params: T;
 }
 
-export interface RouteEvent<T extends Record<string, any> = Record<string, any>> extends
+export interface RouteEvent<T extends Record<string, unknown> = Record<string, unknown>> extends
   MatchedRoute<T>,
   Omit<URLChangedOption, 'url'>
 {
   url: string;
 }
 
-export interface RouteOption<T extends Record<string, any> = Record<string, any>> {
+export interface RouteOption<T extends Record<string, unknown> = Record<string, unknown>> {
   handleEvent?(params: T, status: URLChangedStatus): Promise<boolean> | boolean;
   pathRegExp: RegExp;
   scope?: string;

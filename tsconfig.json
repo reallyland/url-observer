@@ -4,7 +4,7 @@
     "rootDir": "src",
     "outDir": "dist",
     "target": "ES2019",
-    "declarationDir": "dist",
+    "declarationDir": "dist"
   },
   "include": ["src/**/*.ts"],
   "exclude": ["dist", "node_modules"]

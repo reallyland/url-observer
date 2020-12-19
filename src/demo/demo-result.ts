@@ -5,15 +5,16 @@ import {
   customElement,
   html,
   LitElement,
+  TemplateResult,
 } from 'lit-element';
 
 import { cache } from 'lit-html/directives/cache.js';
-import { pushStateEventKey } from '../constants.js';
+import { linkScopeKey, pushStateEventKey } from '../constants.js';
 import type { Page } from './custom_demo_typings.js';
 import { routes } from './demo.js';
 import { router } from './router.js';
 
-interface RouteMatch {
+interface RouteMatch extends Record<string, unknown> {
   page: Page;
   result: string;
 }
@@ -24,7 +25,7 @@ const $w = window;
 @customElement($name)
 export class DemoResult extends LitElement {
   #handleResult!: () => void;
-  #result: string = '';
+  #result = '';
 
   public static styles = [
     css`
@@ -44,20 +45,20 @@ export class DemoResult extends LitElement {
     this.#handleResult = () => this._handlerResult();
   }
 
-  public disconnectedCallback() {
+  public disconnectedCallback(): void {
     super.disconnectedCallback();
 
     $w.removeEventListener(pushStateEventKey, this.#handleResult);
   }
 
-  protected firstUpdated() {
+  protected firstUpdated(): void {
     router.add({ pathRegExp: routes.result });
 
     this._handlerResult();
     $w.addEventListener(pushStateEventKey, this.#handleResult);
   }
 
-  protected render() {
+  protected render(): TemplateResult {
     return html`
   <h2>Results</h2>
 
@@ -118,7 +119,7 @@ export class DemoResult extends LitElement {
 
 declare global {
   interface HTMLAnchorElement {
-    scope: string;
+    [linkScopeKey]: string;
   }
 
   interface HTMLElementTagNameMap {

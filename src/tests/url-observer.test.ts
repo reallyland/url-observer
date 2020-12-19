@@ -53,7 +53,7 @@ describe('url-observer', () => {
     const [
       urlEntries,
       observerParam,
-    ] = await new Promise<[URLObserverEntryProperty[], URLObserver]>(async (y) => {
+    ] = await new Promise<[URLObserverEntryProperty[], URLObserver]>(async (resolve) => {
       const { removeLink } = appendLink(newUrl);
       const observer = init({
         callback(list, obs) {
@@ -65,7 +65,7 @@ describe('url-observer', () => {
             result.push(entry.toJSON());
           }
 
-          y([result, obs]);
+          resolve([result, obs]);
         },
       });
 
@@ -245,7 +245,7 @@ describe('url-observer', () => {
 
       removeLink();
 
-      await new Promise(y => window.setTimeout(y, 2e3));
+      await new Promise(resolve => window.setTimeout(resolve, 2e3));
     }
 
     /** Pop n - 1 URLs out of history */
@@ -313,7 +313,7 @@ describe('url-observer', () => {
 
       /** Only wait for dwellTime after first URL */
       if (newUrl === newUrls[0]) {
-        await new Promise(y => window.setTimeout(y, 2e3));
+        await new Promise(resolve => window.setTimeout(resolve, 2e3));
       }
 
       removeLink();

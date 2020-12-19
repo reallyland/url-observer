@@ -1,4 +1,4 @@
-import { popStateEventKey, pushStateEventKey } from './constants.js';
+import { linkScopeKey, popStateEventKey, pushStateEventKey } from './constants.js';
 import type {
   MatchedRoute,
   RouteEvent,
@@ -20,17 +20,17 @@ const $l = $w.location;
 
 export class URLObserver {
   #callback?: URLObserverCallbacks['callback'];
-  #connected: boolean = false;
-  #debug: boolean = false;
+  #connected = false;
+  #debug = false;
   /**
    * dwellTime is required to prevent pushState IPC storm DoS.
    *
    * @see {@link https://codereview.chromium.org/2972073002|Issue 2972073002}
    * for more in-depth issue.
    */
-  #dwellTime: number = 2e3;
+  #dwellTime = 2e3;
   #entryList: URLObserverEntryList = new URLObserverEntryList();
-  #lastChangedAt: number = -1;
+  #lastChangedAt = -1;
   #matcherCallback: URLObserverCallbacks['matcherCallback'] = urlParamMatcher;
   #routes: Routes = new Map();
 
@@ -48,7 +48,7 @@ export class URLObserver {
     return 'URLObserver';
   }
 
-  public add<T>(option: RouteOption<T>): void {
+  public add<T extends Record<string, unknown>>(option: RouteOption<T>): void {
     const {
       handleEvent,
       pathRegExp,
@@ -84,8 +84,8 @@ export class URLObserver {
     this.#entryList.deleteEntries();
   }
 
-  public match<T>(): MatchedRoute<T> {
-    const { pathname } = $l;
+  public match<T extends Record<string, unknown> = Record<string, unknown>>(tail?: string): MatchedRoute<T> {
+    const pathname= tail || $l.pathname;
 
     for (const [, { pathRegExp }] of this.#routes) {
       if (pathRegExp.test(pathname)) {
@@ -204,8 +204,8 @@ export class URLObserver {
 
     await this._urlChangedWithBeforeRoute({
       url,
-      scope: Object.keys(anchor).includes('scope') || anchor.hasAttribute('scope') ?
-        anchor.scope || anchor.getAttribute('scope') || ':default' :
+      scope: Object.keys(anchor).includes(linkScopeKey) || anchor.hasAttribute(linkScopeKey) ?
+        anchor[linkScopeKey] || anchor.getAttribute(linkScopeKey) || ':default' :
         '',
       status: 'click',
     });
@@ -334,13 +334,13 @@ export class URLObserver {
 declare global {
   // #region HTML element type extensions
   interface HTMLAnchorElement {
-    scope: string;
+    [linkScopeKey]: string;
   }
   // #endregion HTML element type extensions
 
   interface WindowEventMap {
-    [popStateEventKey]: CustomEvent<RouteEvent<any>>;
-    [pushStateEventKey]: CustomEvent<RouteEvent<any>>;
+    [popStateEventKey]: CustomEvent<RouteEvent<Record<string, unknown>>>;
+    [pushStateEventKey]: CustomEvent<RouteEvent<Record<string, unknown>>>;
   }
 }
 
