@@ -44,6 +44,7 @@ jobs:
           node-version: ${{ matrix.target }}
 
       - name: Setup Playwright
+        if: "env.CI_SKIP == 'false'"
         uses: microsoft/playwright-github-action@v1
 
       - name: List versions
