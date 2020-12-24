@@ -14,10 +14,6 @@ import { urlParamMatcher } from './helpers/url-param-matcher.js';
 import { URLObserverEntryList } from './url-observer-entry-list.js';
 import type { URLObserverEntry } from './url-observer-entry.js';
 
-const $w = window;
-const $h = $w.history;
-const $l = $w.location;
-
 export class URLObserver {
   #callback?: URLObserverCallbacks['callback'];
   #connected = false;
@@ -77,15 +73,15 @@ export class URLObserver {
 
   public disconnect(): void {
     document.body.removeEventListener('click', this._click);
-    $w.removeEventListener('hashchange', this._hashchange);
-    $w.removeEventListener('popstate', this._popstate);
+    window.removeEventListener('hashchange', this._hashchange);
+    window.removeEventListener('popstate', this._popstate);
 
     this.#connected = false;
     this.#entryList.deleteEntries();
   }
 
   public match<T extends Record<string, unknown> = Record<string, unknown>>(tail?: string): MatchedRoute<T> {
-    const pathname= tail || $l.pathname;
+    const pathname= tail || location.pathname;
 
     for (const [, { pathRegExp }] of this.#routes) {
       if (pathRegExp.test(pathname)) {
@@ -131,11 +127,11 @@ export class URLObserver {
     }
 
     document.body.addEventListener('click', this._click);
-    $w.addEventListener('hashchange', this._hashchange);
-    $w.addEventListener('popstate', this._popstate);
+    window.addEventListener('hashchange', this._hashchange);
+    window.addEventListener('popstate', this._popstate);
 
     this._updateUrl({
-      url: new URL($l.href),
+      url: new URL(location.href),
       scope: '',
       status: 'init',
     });
@@ -165,7 +161,7 @@ export class URLObserver {
     await this._urlChangedWithBeforeRoute({
       scope: scope || '',
       status: 'manual',
-      url: new URL(pathname, $l.origin),
+      url: new URL(pathname, location.origin),
     });
   }
 
@@ -188,19 +184,19 @@ export class URLObserver {
       null == anchor ||
       anchor.hasAttribute('download') ||
       anchor.target === '_blank' ||
-      ((anchor.target === '_top' || anchor.target === '_parent') && $w.top !== $w)
+      ((anchor.target === '_top' || anchor.target === '_parent') && window.top !== window)
     ) return;
 
     const href = anchor.href;
     const url = document.baseURI != null ? new URL(href, document.baseURI) : new URL(href);
 
     /** Nothing to do if not in the same origin */
-    if (url.origin !== $l.origin) return;
+    if (url.origin !== location.origin) return;
 
     ev.preventDefault();
 
     /** Nothing to do if nothing new in the URL */
-    if (url.href === $l.href) return;
+    if (url.href === location.href) return;
 
     await this._urlChangedWithBeforeRoute({
       url,
@@ -215,7 +211,7 @@ export class URLObserver {
     this._updateUrl({
       scope: '',
       status: 'hashchange',
-      url: new URL($l.href),
+      url: new URL(location.href),
     });
   }
 
@@ -229,7 +225,7 @@ export class URLObserver {
     this._updateUrl({
       scope: '',
       status: 'popstate',
-      url: new URL($l.href),
+      url: new URL(location.href),
     });
   }
 
@@ -264,7 +260,7 @@ export class URLObserver {
       url,
     } = option;
     const fullUrl = url.href;
-    const now = $w.performance.now();
+    const now = window.performance.now();
     /**
      * URL will always be replaced when:
      * 1. Not triggered by clicks
@@ -273,9 +269,9 @@ export class URLObserver {
     const shouldReplace = status !== 'click' || (this.#lastChangedAt + this.#dwellTime >= now);
 
     if (shouldReplace) {
-      $h.replaceState({}, '', fullUrl);
+      history.replaceState({}, '', fullUrl);
     } else {
-      $h.pushState({}, '', fullUrl);
+      history.pushState({}, '', fullUrl);
     }
 
     this.#lastChangedAt = now;
@@ -286,7 +282,7 @@ export class URLObserver {
     this.#entryList.addEntry({
       scope,
       entryType: status,
-      startTime: $w.performance.now(),
+      startTime: window.performance.now(),
       url: fullUrl,
     });
 
@@ -300,7 +296,7 @@ export class URLObserver {
       matcherCallback: this.#matcherCallback,
     });
 
-    $w.dispatchEvent(
+    window.dispatchEvent(
       new CustomEvent<RouteEvent>(
         status === 'popstate' ? popStateEventKey : pushStateEventKey,
         {
