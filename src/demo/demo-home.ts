@@ -5,8 +5,9 @@ import {
   customElement,
   html,
   LitElement,
-  TemplateResult,
 } from 'lit-element';
+import type { TemplateResult } from 'lit-element';
+
 import type { linkScopeKey } from '../constants.js';
 
 const $name = 'demo-home';

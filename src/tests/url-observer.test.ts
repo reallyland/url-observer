@@ -5,7 +5,8 @@ import type { MatchedRoute, RouteValue, URLChangedStatus, URLObserverEntryProper
 import { URLObserver } from '../url-observer.js';
 import { routes } from './config.js';
 import type { URLObserverWithDebug } from './custom_test_typings.js';
-import { appendLink, AppendLinkResult } from './utils/append-link.js';
+import { appendLink } from './utils/append-link.js';
+import type { AppendLinkResult } from './utils/append-link.js';
 import { historyFixture } from './utils/history-fixture.js';
 import { initObserver } from './utils/init-observer.js';
 import { waitForEvent } from './utils/wait-for-event.js';

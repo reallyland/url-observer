@@ -6,8 +6,8 @@ import {
   html,
   LitElement,
   property,
-  TemplateResult,
 } from 'lit-element';
+import type { TemplateResult } from 'lit-element';
 import { cache } from 'lit-html/directives/cache.js';
 import { until } from 'lit-html/directives/until.js';
 

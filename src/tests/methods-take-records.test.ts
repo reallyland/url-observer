@@ -5,7 +5,8 @@ import { routes } from './config.js';
 import type { URLObserverWithDebug } from './custom_test_typings.js';
 import { historyFixture } from './utils/history-fixture.js';
 import { initObserver } from './utils/init-observer.js';
-import { TriggerEventListeners, triggerEvents } from './utils/trigger-event.js';
+import type { TriggerEventListeners } from './utils/trigger-event.js';
+import { triggerEvents } from './utils/trigger-event.js';
 
 describe('methods-take-records', () => {
   const observers: Set<URLObserverWithDebug> = new Set();

@@ -6,11 +6,11 @@ import type { URLObserverWithDebug } from './custom_test_typings.js';
 import { historyFixture } from './utils/history-fixture.js';
 import { initObserver } from './utils/init-observer.js';
 import { toResult } from './utils/to-result.js';
-import {
+import type {
   TriggerEventListeners,
-  triggerEvents,
   TriggerEventsEvents,
 } from './utils/trigger-event.js';
+import { triggerEvents } from './utils/trigger-event.js';
 
 describe('methods-observe', () => {
   const observers: Set<URLObserverWithDebug> = new Set();

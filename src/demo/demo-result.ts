@@ -5,10 +5,10 @@ import {
   customElement,
   html,
   LitElement,
-  TemplateResult,
 } from 'lit-element';
-
+import type { TemplateResult } from 'lit-element';
 import { cache } from 'lit-html/directives/cache.js';
+
 import { linkScopeKey, pushStateEventKey } from '../constants.js';
 import type { Page } from './custom_demo_typings.js';
 import { routes } from './demo.js';

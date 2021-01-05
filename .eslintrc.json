@@ -36,6 +36,12 @@
         "exports": "always-multiline",
         "functions": "never"
       }
+    ],
+    "@typescript-eslint/consistent-type-imports": [
+      "error", {
+        "prefer": "type-imports",
+        "disallowTypeAnnotations": false
+      }
     ]
   }
 }
