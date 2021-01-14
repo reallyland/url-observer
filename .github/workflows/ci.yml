@@ -38,45 +38,45 @@ jobs:
           fi
 
       - name: Setup node@${{ matrix.target }}
-        if: "env.CI_SKIP == 'false'"
+        if: env.CI_SKIP != 'true'
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.target }}
 
       - name: Setup Playwright
-        if: "env.CI_SKIP == 'false'"
+        if: env.CI_SKIP != 'true'
         uses: microsoft/playwright-github-action@v1
 
       - name: List versions
         continue-on-error: true
-        if: "env.CI_SKIP == 'false'"
         shell: bash
+        if: env.CI_SKIP != 'true'
         run: |
           node -v && npm version && which npm && pwd && npx envinfo
 
       - name: Install dependencies
-        if: "env.CI_SKIP == 'false'"
+        if: env.CI_SKIP != 'true'
         run: |
           npm ci --quiet
 
       - name: Lint
-        if: "env.CI_SKIP == 'false'"
+        if: env.CI_SKIP != 'true'
         run: |
           npm run lint
 
       - name: Package check
-        if: "env.CI_SKIP == 'false'"
+        if: env.CI_SKIP != 'true'
         run: |
           npm run check
 
       - name: Run Test
-        if: "env.CI_SKIP == 'false'"
+        if: env.CI_SKIP != 'true'
         run: |
           npm t
 
       - name: Upload coverage to codecov
         uses: codecov/codecov-action@v1
-        if: env.CI_SKIP == 'false' && success()
+        if: env.CI_SKIP != 'true' && success()
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: ./coverage/lcov.info
