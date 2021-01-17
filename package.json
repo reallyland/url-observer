@@ -1,6 +1,6 @@
 {
   "name": "url-observer",
-  "version": "0.2.2-rc.0",
+  "version": "0.2.2",
   "description": "URLObserver observes URL changes in a web browser",
   "keywords": [
     "hashchange",
