@@ -28,7 +28,7 @@
   "type": "module",
   "exports": {
     ".": "./dist/url-observer.js",
-    "./helpers/*": "./dist/helpers/*.js",
+    "./dist/*": "./dist/*",
     "./url-observer": "./dist/url-observer.js",
     "./url-observer-entry": "./dist/url-observer-entry.js",
     "./url-observer-entry-list": "./dist/url-observer-entry-list.js",
